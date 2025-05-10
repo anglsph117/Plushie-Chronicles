@@ -82,6 +82,8 @@ const BattleSystem = () => {
   const damageNumberAnim = useRef(new Animated.Value(0)).current;
   const playerHealthBarAnim = useRef(new Animated.Value(100)).current;
   const enemyHealthBarAnim = useRef(new Animated.Value(100)).current;
+  const [showDodgeMessage, setShowDodgeMessage] = useState(false);
+  const dodgeMessageAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (selectedSkills) {
@@ -278,6 +280,7 @@ const BattleSystem = () => {
       const dodgeRoll = Math.random() * 100;
       if (dodgeRoll < dodgeChance) {
         setCombatLog(prev => [...prev, 'You successfully dodged the enemy attack!']);
+        showDodgeIndicator();
         setIsPlayerTurn(true);
         setTimer(30);
         setIsDodging(false);
@@ -485,6 +488,7 @@ const BattleSystem = () => {
       const dodgeRoll = Math.random() * 100;
       if (dodgeRoll < dodgeChance) {
         setCombatLog(prev => [...prev, 'You successfully dodged the enemy attack!']);
+        showDodgeIndicator();
         setIsPlayerTurn(true);
         setTimer(30);
         setIsDodging(false);
@@ -592,6 +596,26 @@ const BattleSystem = () => {
     // Whenever enemy maxHealth changes, update the animation value
     enemyHealthBarAnim.setValue(enemy.health);
   }, [enemy.maxHealth, enemy.health]);
+
+  // Add this function to show dodge message
+  const showDodgeIndicator = () => {
+    setShowDodgeMessage(true);
+    dodgeMessageAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(dodgeMessageAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(dodgeMessageAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setShowDodgeMessage(false);
+    });
+  };
 
   if (!backgroundMap) {
     return (
@@ -792,6 +816,32 @@ const BattleSystem = () => {
                       </Animated.View>
                     ))}
                   </>
+                )}
+                {showDodgeMessage && (
+                  <Animated.Text
+                    style={[
+                      styles.dodgeMessage,
+                      {
+                        opacity: dodgeMessageAnim,
+                        transform: [
+                          {
+                            translateY: dodgeMessageAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0, -50]
+                            })
+                          },
+                          {
+                            scale: dodgeMessageAnim.interpolate({
+                              inputRange: [0, 0.5, 1],
+                              outputRange: [0.5, 1.2, 1]
+                            })
+                          }
+                        ]
+                      }
+                    ]}
+                  >
+                    DODGED!
+                  </Animated.Text>
                 )}
               </Animated.View>
             </View>
@@ -1969,6 +2019,20 @@ const styles = StyleSheet.create({
   equalSkillIcon: {
     width: '100%',
     height: '100%',
+  },
+  dodgeMessage: {
+    position: 'absolute',
+    top: '20%',
+    left: '50%',
+    transform: [{ translateX: -40 }],
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontWeight: 'bold',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+    fontFamily: 'PixelifySans',
+    zIndex: 1000,
   },
 });
 
