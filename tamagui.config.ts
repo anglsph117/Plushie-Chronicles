@@ -25,9 +25,39 @@ const animations = createAnimations({
   },
 });
 
-const headingFont = createInterFont();
-
-const bodyFont = createInterFont();
+const pixelFont = {
+  family: 'PixelifySans',
+  size: {
+    4: 13,
+    5: 15,
+    6: 17,
+    7: 19,
+    8: 21,
+    9: 23,
+    10: 25,
+    12: 29,
+    true: 17,
+  },
+  lineHeight: {
+    4: 15,
+    5: 17,
+    6: 19,
+    7: 21,
+    8: 23,
+    9: 25,
+    10: 27,
+    12: 31,
+    true: 19,
+  },
+  weight: {
+    4: '400',
+    7: '700',
+  },
+  letterSpacing: {
+    4: 0,
+    8: 0.5,
+  },
+};
 
 export const Container = styled(YStack, {
   flex: 1,
@@ -89,8 +119,8 @@ const config = createTamagui({
   themeClassNameOnRoot: true,
   shorthands,
   fonts: {
-    body: bodyFont,
-    heading: headingFont,
+    body: pixelFont,
+    heading: pixelFont,
   },
   themes,
   tokens,

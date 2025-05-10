@@ -29,6 +29,7 @@ const TitleText = styled(Text, {
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 4,
     marginBottom: 20,
+    fontFamily: '$body',
 });
 
 const HeadingText = styled(Text, {
@@ -42,6 +43,7 @@ const HeadingText = styled(Text, {
     marginTop: 16,
     marginBottom: 8,
     textTransform: "uppercase",
+    fontFamily: '$body',
 });
 
 const ContentText = styled(Text, {
@@ -50,6 +52,7 @@ const ContentText = styled(Text, {
     lineHeight: 24,
     textAlign: "left",
     marginBottom: 12,
+    fontFamily: '$body',
 });
 
 const VersionText = styled(Text, {
@@ -57,6 +60,7 @@ const VersionText = styled(Text, {
     fontSize: 14,
     textAlign: "center",
     marginTop: 20,
+    fontFamily: '$body',
 });
 
 const About = () => {
@@ -165,10 +169,10 @@ const About = () => {
 
                             <HeadingText>Credits</HeadingText>
                             <ContentText>
-                                Developed with ❤️ by Plushie Chronicles Team{'\n'}
-                                Art Direction: Plushie Art Studio{'\n'}
-                                Sound Design: Plushie Audio Works{'\n'}
-                                Combat Design: Plushie Battle Systems
+                                Developed by Playbox Studio{'\n'}
+                                Art Direction: Angel Saydoquen, Mar Jonel Rebustes, Lloyd Quijano, Jthird Sadje, Kwarl Ortega, {'\n'}
+                                Sound Design: Andrhei Bleza, Melnard Doctolero{'\n'}
+                                Combat Design: Angel Saydoquen, Justin Dacula
                             </ContentText>
 
                             <VersionText>Version 1.0.0</VersionText>

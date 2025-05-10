@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, Dimensions, Platform, StyleSheet } from 'react-native'
+import { View, Text, ScrollView, Pressable, Dimensions, Platform, StyleSheet, TextInput } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { Image, styled, XStack } from 'tamagui'
 import { Video, ResizeMode } from 'expo-av'
@@ -14,7 +14,6 @@ const cardHeight = Math.floor(cardWidth * 1.4)
 
 interface Hero {
     id: string
-    name: string
     imageUrl: string
     gender: string
 }
@@ -22,38 +21,34 @@ interface Hero {
 const heroes: Hero[] = [
     {
         id: '1',
-        name: "Justin",
         gender: "Male",
-        imageUrl: "https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images//1.png"
+        imageUrl: "https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/483269186_3955953094720582_9100427565649854067_n-removebg-preview.png"
     },
     {
         id: '2',
-        name: "Angel",
         gender: "Female",
-        imageUrl: "https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images//6.png"
+        imageUrl: "https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/490997280_1317475282671322_3566878902700068026_n-removebg-preview.png"
     },
     {
         id: '3',
-        name: "Dwyane",
         gender: "Non-Binary",
-        imageUrl: "https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images//3.png"
+        imageUrl:"https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/blezaa-removebg-preview.png"
     },
     {
         id: '4',
-        name: "Jonel",
         gender: "Male",
-        imageUrl: "https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images//4.png"
+        imageUrl: "https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/490998113_508293622221028_4728717155999301774_n__3_-removebg-preview.png"
     },
     {
         id: '5',
-        name: "Andrhei",
         gender: "Female",
-        imageUrl: "https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images//7.png"
+        imageUrl: "https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/asd-removebg-preview.png"
     }
 ]
 
 const HeroCustomization = () => {
-    const [selectedHero, setSelectedHero] = useState<string>('1')
+    const [selectedHero, setSelectedHero] = useState<string>('')
+    const [heroName, setHeroName] = useState('')
     const videoRef = React.useRef<Video>(null);
     const [dimensions, setDimensions] = useState({ width, height, isLandscape });
 
@@ -88,7 +83,8 @@ const HeroCustomization = () => {
             fontWeight: 'bold',
             textShadowColor: '#20B2AA',
             textShadowOffset: { width: 1, height: 1 },
-            textShadowRadius: 2
+            textShadowRadius: 2,
+            fontFamily: 'PixelifySans'
         }
     });
 
@@ -104,6 +100,7 @@ const HeroCustomization = () => {
                 height: 1,
             },
             textShadowRadius: 6,
+            fontFamily: 'PixelifySans'
         }
     });
 
@@ -238,9 +235,10 @@ const HeroCustomization = () => {
                                                         textShadowColor: '#20B2AA',
                                                         textShadowOffset: { width: 1, height: 1 },
                                                         textShadowRadius: 2,
-                                                        marginBottom: 1
+                                                        marginBottom: 1,
+                                                        fontFamily: 'PixelifySans'
                                                     }}>
-                                                        {hero.name}
+                                                        Name
                                                     </Text>
                                                     <Text style={{
                                                         fontSize: dimensions.isLandscape ? 10 : 9,
@@ -248,7 +246,8 @@ const HeroCustomization = () => {
                                                         textAlign: 'center',
                                                         textShadowColor: '#000',
                                                         textShadowOffset: { width: 1, height: 1 },
-                                                        textShadowRadius: 1
+                                                        textShadowRadius: 1,
+                                                        fontFamily: 'PixelifySans'
                                                     }}>
                                                         {hero.gender}
                                                     </Text>
@@ -270,8 +269,58 @@ const HeroCustomization = () => {
                         borderTopWidth: 1,
                         borderTopColor: 'rgba(32, 178, 170, 0.3)'
                     }}>
+                        {selectedHero && (
+                            <View style={{
+                                width: '100%',
+                                marginBottom: 16,
+                                alignItems: 'center'
+                            }}>
+                                <Text style={{
+                                    color: '#FFFFFF',
+                                    fontSize: 16,
+                                    marginBottom: 8,
+                                    textShadowColor: '#20B2AA',
+                                    textShadowOffset: { width: 1, height: 1 },
+                                    textShadowRadius: 2,
+                                    fontFamily: 'PixelifySans'
+                                }}>
+                                    Enter your hero's name:
+                                </Text>
+                                <TextInput
+                                    style={{
+                                        width: dimensions.isLandscape ? '50%' : '80%',
+                                        height: 40,
+                                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                        borderWidth: 1,
+                                        borderColor: '#20B2AA',
+                                        borderRadius: 8,
+                                        paddingHorizontal: 12,
+                                        color: '#FFFFFF',
+                                        fontSize: 16,
+                                        textAlign: 'center',
+                                        fontFamily: 'PixelifySans'
+                                    }}
+                                    placeholder="Enter hero name"
+                                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                                    value={heroName}
+                                    onChangeText={setHeroName}
+                                    maxLength={20}
+                                />
+                            </View>
+                        )}
                         <Pressable
-                            onPress={() => router.push('/(home)/SkillsSelection')}
+                            onPress={() => {
+                                if (selectedHero && heroName.trim()) {
+                                    const selectedHeroData = heroes.find(h => h.id === selectedHero);
+                                    router.push({
+                                        pathname: '/(home)/SkillsSelection',
+                                        params: { 
+                                            playerName: heroName.trim(),
+                                            playerImageUrl: selectedHeroData?.imageUrl
+                                        }
+                                    });
+                                }
+                            }}
                             style={({ pressed }) => ({
                                 width: dimensions.isLandscape ? 200 : 180,
                                 height: dimensions.isLandscape ? 45 : 40,
@@ -284,8 +333,11 @@ const HeroCustomization = () => {
                                 shadowOpacity: 0.6,
                                 shadowRadius: 6,
                                 elevation: 4,
-                                transform: [{ scale: pressed ? 0.98 : 1 }]
+                                transform: [{ scale: pressed ? 0.98 : 1 }],
+                                opacity: selectedHero && heroName.trim() ? 1 : 0.5,
+                                fontFamily: 'PixelifySans'
                             })}
+                            disabled={!selectedHero || !heroName.trim()}
                         >
                             <View style={{
                                 flex: 1,
@@ -301,7 +353,8 @@ const HeroCustomization = () => {
                                     textShadowColor: '#20B2AA',
                                     textShadowOffset: { width: 1, height: 1 },
                                     textShadowRadius: 2,
-                                    letterSpacing: 1
+                                    letterSpacing: 1,
+                                    fontFamily: 'PixelifySans'
                                 }}>
                                     CONFIRM SELECTION
                                 </Text>

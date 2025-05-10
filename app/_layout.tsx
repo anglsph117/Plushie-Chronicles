@@ -9,6 +9,7 @@ export default function Layout() {
   const [loaded] = useFonts({
     Inter: require('@tamagui/font-inter/otf/Inter-Medium.otf'),
     InterBold: require('@tamagui/font-inter/otf/Inter-Bold.otf'),
+    PixelifySans: require('./Jersey10-Regular.ttf'),
   });
 
   useEffect(() => {

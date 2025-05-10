@@ -60,12 +60,14 @@ const GameDifficulties = () => {
         textShadowRadius: 6,
         numberOfLines: 1,
         adjustsFontSizeToFit: true,
+        fontFamily: '$body',
     });
 
     const ErrorText = styled(Text, {
         color: "#FF5555",
         fontSize: 14,
         textAlign: "center",
+        fontFamily: '$body',
     });
 
     // Handle dimension changes
@@ -145,7 +147,8 @@ const GameDifficulties = () => {
                                     textAlign: "center",
                                     textShadowColor: 'rgba(0, 0, 0, 0.5)',
                                     textShadowOffset: { width: 1, height: 1 },
-                                    textShadowRadius: 2
+                                    textShadowRadius: 2,
+                                    fontFamily: 'PixelifySans'
                                 }}>
                                     {videoError}
                                 </Text>
@@ -263,7 +266,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textShadowColor: '#20B2AA',
         textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2
+        textShadowRadius: 2,
+        fontFamily: 'PixelifySans'
     },
     errorContainer: {
         padding: 8,

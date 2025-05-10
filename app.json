@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "plushie",
-    "slug": "plushie",
+    "name": "Plushie Chronicles",
+    "slug": "plushie-chronicles",
     "version": "1.0.0",
     "scheme": "plushie",
     "orientation": "landscape",
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/plushiechronicles.jpg"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -23,10 +23,10 @@
       "typedRoutes": true,
       "tsconfigPaths": true
     },
-    "icon": "./assets/playboxstudio.jpg",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/playboxstudio.jpg",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -35,21 +35,24 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.plushie.chronicles"
+      "bundleIdentifier": "com.yourcompany.plushiechronicles",
+      "buildNumber": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/playboxstudio.jpg",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.plushie.chronicles"
+      "package": "com.yourcompany.plushiechronicles",
+      "versionCode": 1,
+      "permissions": []
     },
     "extra": {
       "router": {
         "origin": false
       },
       "eas": {
-        "projectId": "15f1a973-f05c-4e1b-a5bb-8d3f7543f4b9"
+        "projectId": "your-project-id"
       }
     }
   }
