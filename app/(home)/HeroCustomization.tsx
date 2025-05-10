@@ -27,17 +27,17 @@ const heroes: Hero[] = [
     {
         id: '2',
         gender: "Female",
-        imageUrl: "https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/490997280_1317475282671322_3566878902700068026_n-removebg-preview.png"
+        imageUrl: "https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/purp%20idle.gif"
     },
     {
         id: '3',
         gender: "Non-Binary",
-        imageUrl:"https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/blezaa-removebg-preview.png"
+        imageUrl:"https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/pink%20idle.gif"
     },
     {
         id: '4',
         gender: "Male",
-        imageUrl: "https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/490998113_508293622221028_4728717155999301774_n__3_-removebg-preview.png"
+        imageUrl: "https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/FLy%20idle.gif"
     },
     {
         id: '5',

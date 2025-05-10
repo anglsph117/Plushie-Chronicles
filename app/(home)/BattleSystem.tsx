@@ -13,6 +13,9 @@ interface Skill {
   cooldown: number;
   imageUrl: string;
   currentCooldown?: number;
+  isPassive?: boolean;
+  isOneTimeUse?: boolean;
+  hasBeenUsed?: boolean;
 }
 
 interface Enemy {
@@ -38,7 +41,7 @@ const BattleSystem = () => {
     name: 'Samurai',
     health: parseInt(enemyHealth) || 100,
     maxHealth: parseInt(enemyHealth) || 100,
-    damage: 25 ,
+    damage: 25,
     imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/samurai%20idle.gif'
   });
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
@@ -54,6 +57,9 @@ const BattleSystem = () => {
   const playerHealthAnim = useRef(new Animated.Value(100)).current;
   const playerManaAnim = useRef(new Animated.Value(100)).current;
   const enemyHealthAnim = useRef(new Animated.Value(100)).current;
+  const playerShakeAnim = useRef(new Animated.Value(0)).current;
+  const [showRainbowBlood, setShowRainbowBlood] = useState(false);
+  const rainbowBloodAnim = useRef(new Animated.Value(0)).current;
   const [backgroundMap, setBackgroundMap] = useState<ImageSourcePropType | null>(null);
   const [showTurnNotification, setShowTurnNotification] = useState(false);
   const [turnNotificationText, setTurnNotificationText] = useState('');
@@ -62,19 +68,61 @@ const BattleSystem = () => {
   const [hasDealtDamage, setHasDealtDamage] = useState(false);
   const [isEnemyAttacking, setIsEnemyAttacking] = useState(false);
   const enemyAttackAnim = useRef(new Animated.Value(0)).current;
+  const [passiveSkills, setPassiveSkills] = useState<{ [key: string]: boolean }>({});
+  const [dodgeChance, setDodgeChance] = useState(0);
+  const [rawDamageBonus, setRawDamageBonus] = useState(0);
+  const [maxHealth, setMaxHealth] = useState(100);
+  const [showSkillMessage, setShowSkillMessage] = useState(false);
+  const [skillMessage, setSkillMessage] = useState('');
+  const [activeBuffs, setActiveBuffs] = useState<string[]>([]);
+  const soruAnim = useRef(new Animated.Value(0)).current;
+  const [showSoru, setShowSoru] = useState(false);
+  const [showDamageNumber, setShowDamageNumber] = useState(false);
+  const [damageAmount, setDamageAmount] = useState(0);
+  const damageNumberAnim = useRef(new Animated.Value(0)).current;
+  const playerHealthBarAnim = useRef(new Animated.Value(100)).current;
+  const enemyHealthBarAnim = useRef(new Animated.Value(100)).current;
 
   useEffect(() => {
     if (selectedSkills) {
       try {
         const parsedSkills = JSON.parse(selectedSkills);
-        setSkills(parsedSkills.map((skill: any) => ({
+        const processedSkills = parsedSkills.map((skill: any) => ({
           name: skill.name,
           damage: skill.damage,
           manaCost: Math.floor(skill.damage * 0.5),
           description: skill.description,
           cooldown: skill.cooldown,
-          imageUrl: skill.imageUrl || 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/default-skill.png'
-        })));
+          imageUrl: skill.imageUrl || 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/default-skill.png',
+          isPassive: skill.name === "More Health" || skill.name === "Swift",
+          isOneTimeUse: skill.name === "Sword Blessing" || skill.name === "Replenish"
+        }));
+
+        setSkills(processedSkills);
+
+        // Apply passive skills immediately
+        processedSkills.forEach((skill: Skill) => {
+          if (skill.isPassive) {
+            switch (skill.name) {
+              case "More Health":
+                const newMaxHealth = 150;
+                setMaxHealth(newMaxHealth);
+                setPlayerHealth(newMaxHealth);
+                playerHealthAnim.setValue(newMaxHealth);
+                setPassiveSkills(prev => ({ ...prev, [skill.name]: true }));
+                setActiveBuffs(prev => [...prev, "More Health"]);
+                setCombatLog(prev => [...prev, `Your maximum health has been increased to ${newMaxHealth}!`]);
+                break;
+
+              case "Swift":
+                setDodgeChance(prev => prev + 20);
+                setPassiveSkills(prev => ({ ...prev, [skill.name]: true }));
+                setActiveBuffs(prev => [...prev, "Swift"]);
+                setCombatLog(prev => [...prev, `Your dodge chance has been increased by 20%!`]);
+                break;
+            }
+          }
+        });
       } catch (error) {
         console.error('Error parsing skills:', error);
       }
@@ -92,17 +140,21 @@ const BattleSystem = () => {
   }, [timer, isPaused]);
 
   useEffect(() => {
-    const maps: ImageSourcePropType[] = [
-      require('../../assets/map1.jpg'),
-      require('../../assets/map2.jpg'),
+    const maps: string[] = [
+      'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/maps/map.png',
     ];
     const randomMap = maps[Math.floor(Math.random() * maps.length)];
-    setBackgroundMap(randomMap);
+    setBackgroundMap({ uri: randomMap });
   }, []);
 
   // Initialize enemy health bar to max
   useEffect(() => {
     enemyHealthAnim.setValue(enemy.maxHealth);
+  }, []);
+
+  // Initialize health bar to max at start
+  useEffect(() => {
+    playerHealthAnim.setValue(100);
   }, []);
 
   // Update health animations with smoother transitions
@@ -149,18 +201,60 @@ const BattleSystem = () => {
     setHasDealtDamage(false);
   }, [isPlayerTurn]);
 
-  // Update handleSkillUse to remove turn notifications
+  // Add this new function to handle skill messages
+  const showSkillPopup = (message: string) => {
+    setSkillMessage(message);
+    setShowSkillMessage(true);
+    setTimeout(() => {
+      setShowSkillMessage(false);
+    }, 2000); // Hide after 2 seconds
+  };
+
+  // Update handleSkillUse to prevent using passive skills
   const handleSkillUse = (skill: Skill) => {
-    if (!isPlayerTurn || playerMana < skill.manaCost || skillCooldowns[skill.name] > 0 || hasDealtDamage) return;
+    if (!isPlayerTurn || hasDealtDamage) return;
+
+    // Prevent using passive skills
+    if (skill.isPassive) {
+      setCombatLog(prev => [...prev, `${skill.name} is a passive skill and cannot be used in battle!`]);
+      return;
+    }
+
+    // Handle active skills
+    if (playerMana < skill.manaCost || skillCooldowns[skill.name] > 0) return;
+
+    if (skill.name === "Replenish") {
+      showSkillPopup("REPLENISHED!");
+      animateHealthChange(playerHealth, maxHealth, playerHealthBarAnim);
+      setPlayerHealth(maxHealth);
+      setCombatLog(prev => [...prev, `Your health has been fully restored!`]);
+      
+      // Mark skill as used
+      setSkills(prev => prev.map(s => 
+        s.name === skill.name ? { ...s, hasBeenUsed: true } : s
+      ));
+      
+      setIsPlayerTurn(false);
+      handleEnemyAttack(() => {
+        setIsPlayerTurn(true);
+        setTimer(30);
+      });
+      return;
+    }
+
+    // Regular skill usage
     setHasDealtDamage(true);
     const newMana = playerMana - skill.manaCost;
     setPlayerMana(newMana);
     animateManaChange(playerMana, newMana);
     setSkillCooldowns(prev => ({ ...prev, [skill.name]: skill.cooldown }));
-    const newEnemyHealth = Math.max(0, enemy.health - skill.damage);
+    
+    // Apply raw damage bonus to all attacks
+    const totalDamage = skill.damage + rawDamageBonus;
+    const newEnemyHealth = Math.max(0, enemy.health - totalDamage);
     setEnemy(prev => ({ ...prev, health: newEnemyHealth }));
-    animateHealthChange(enemy.health, newEnemyHealth, enemyHealthAnim);
-    setCombatLog(prev => [...prev, `You used ${skill.name} and dealt ${skill.damage} damage!`]);
+    animateHealthChange(enemy.health, newEnemyHealth, enemyHealthBarAnim);
+    setCombatLog(prev => [...prev, `You used ${skill.name} and dealt ${totalDamage} damage!`]);
 
     if (newEnemyHealth <= 0) {
       setCombatLog(prev => [...prev, 'Enemy defeated!']);
@@ -180,19 +274,23 @@ const BattleSystem = () => {
 
     setIsPlayerTurn(false);
     handleEnemyAttack(() => {
-      if (isDodging) {
+      // Apply dodge chance
+      const dodgeRoll = Math.random() * 100;
+      if (dodgeRoll < dodgeChance) {
         setCombatLog(prev => [...prev, 'You successfully dodged the enemy attack!']);
         setIsPlayerTurn(true);
         setTimer(30);
         setIsDodging(false);
         return;
       }
+      
       if (!hasDealtDamage) {
         setHasDealtDamage(true);
         const damage = isResting ? enemy.damage * 2 : enemy.damage;
         setPlayerHealth(prev => {
-          animateHealthChange(prev, Math.max(0, prev - damage), playerHealthAnim);
-          return Math.max(0, prev - damage);
+          const newHealth = Math.max(0, prev - damage);
+          animateHealthChange(prev, newHealth, playerHealthBarAnim);
+          return newHealth;
         });
         setCombatLog(prev => [...prev, `Enemy attacked and dealt ${damage} damage!`]);
       }
@@ -217,8 +315,9 @@ const BattleSystem = () => {
         setHasDealtDamage(true);
         const damage = enemy.damage * 2;
         setPlayerHealth(prev => {
-          animateHealthChange(prev, Math.max(0, prev - damage), playerHealthAnim);
-          return Math.max(0, prev - damage);
+          const newHealth = Math.max(0, prev - damage);
+          animateHealthChange(prev, newHealth, playerHealthBarAnim);
+          return newHealth;
         });
         setCombatLog(prev => [...prev, `Enemy attacked and dealt ${damage} damage!`]);
       }
@@ -250,7 +349,7 @@ const BattleSystem = () => {
     const healAmount = 20;
     const newHealth = Math.min(100, playerHealth + healAmount);
     setPlayerHealth(newHealth);
-    animateHealthChange(playerHealth, newHealth, playerHealthAnim);
+    animateHealthChange(playerHealth, newHealth, playerHealthBarAnim);
     setCombatLog(prev => [...prev, `You heal yourself for ${healAmount} HP!`]);
     setIsPlayerTurn(false);
     handleEnemyAttack(() => {
@@ -258,8 +357,9 @@ const BattleSystem = () => {
         setHasDealtDamage(true);
         const damage = enemy.damage;
         setPlayerHealth(prev => {
-          animateHealthChange(prev, Math.max(0, prev - damage), playerHealthAnim);
-          return Math.max(0, prev - damage);
+          const newHealth = Math.max(0, prev - damage);
+          animateHealthChange(prev, newHealth, playerHealthBarAnim);
+          return newHealth;
         });
         setCombatLog(prev => [...prev, `Enemy attacked and dealt ${damage} damage!`]);
       }
@@ -286,6 +386,8 @@ const BattleSystem = () => {
       damage: 35,
       imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/samurai%20idle.gif'
     });
+    playerHealthBarAnim.setValue(100);
+    enemyHealthBarAnim.setValue(parseInt(enemyHealth) || 100);
     setCombatLog([]);
     setShowGameOver(false);
     setIsPlayerTurn(true);
@@ -304,6 +406,8 @@ const BattleSystem = () => {
         damage: 35,
         imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/samurai%20idle.gif'
       });
+      playerHealthBarAnim.setValue(100);
+      enemyHealthBarAnim.setValue(parseInt(enemyHealth) || 100);
       setCombatLog([]);
       setShowVictory(false);
       setIsPlayerTurn(true);
@@ -350,17 +454,144 @@ const BattleSystem = () => {
 
   // Helper to handle enemy attack animation and logic
   const handleEnemyAttack = (attackCallback: () => void) => {
-    enemyAttackAnim.setValue(0); // Start from left
+    enemyAttackAnim.setValue(0);
+    soruAnim.setValue(0);
     setIsEnemyAttacking(true);
+    setShowSoru(true);
+
+    // Animate the SORU text
+    Animated.sequence([
+      Animated.timing(soruAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(soruAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      })
+    ]).start();
+
     Animated.timing(enemyAttackAnim, {
-      toValue: 1, // Move to right
-      duration: 2000, // Match the GIF duration
+      toValue: 1,
+      duration: 2000,
       useNativeDriver: true,
     }).start(() => {
       setIsEnemyAttacking(false);
+      setShowSoru(false);
+      
+      // Apply dodge chance
+      const dodgeRoll = Math.random() * 100;
+      if (dodgeRoll < dodgeChance) {
+        setCombatLog(prev => [...prev, 'You successfully dodged the enemy attack!']);
+        setIsPlayerTurn(true);
+        setTimer(30);
+        setIsDodging(false);
+        return;
+      }
+      
+      if (!hasDealtDamage) {
+        setHasDealtDamage(true);
+        const damage = isResting ? enemy.damage * 2 : enemy.damage;
+        setPlayerHealth(prev => {
+          const newHealth = Math.max(0, prev - damage);
+          animateHealthChange(prev, newHealth, playerHealthBarAnim);
+          return newHealth;
+        });
+        setCombatLog(prev => [...prev, `Enemy attacked and dealt ${damage} damage!`]);
+        
+        // Show damage number and trigger effects
+        showDamageIndicator(damage);
+        shakePlayer();
+        showRainbowBloodEffect();
+      }
+      
+      setIsPlayerTurn(true);
+      setTimer(30);
+      setIsResting(false);
       attackCallback();
     });
   };
+
+  const handleReturnToMainMenu = () => {
+    setIsPaused(false);
+    router.push('/');
+  };
+
+  // Update the shake animation timing
+  const shakePlayer = () => {
+    // Start shake animation 0.8s earlier
+    setTimeout(() => {
+      Animated.sequence([
+        Animated.timing(playerShakeAnim, {
+          toValue: 10,
+          duration: 25,
+          useNativeDriver: true,
+        }),
+        Animated.timing(playerShakeAnim, {
+          toValue: -10,
+          duration: 25,
+          useNativeDriver: true,
+        }),
+        Animated.timing(playerShakeAnim, {
+          toValue: 10,
+          duration: 25,
+          useNativeDriver: true,
+        }),
+        Animated.timing(playerShakeAnim, {
+          toValue: 0,
+          duration: 25,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 200); // 0.8s earlier than the blood effect
+  };
+
+  // Update the rainbow blood effect to create multiple droplets
+  const showRainbowBloodEffect = () => {
+    setShowRainbowBlood(true);
+    rainbowBloodAnim.setValue(0);
+    Animated.timing(rainbowBloodAnim, {
+      toValue: 1,
+      duration: 800, // Increased duration for falling effect
+      useNativeDriver: true,
+    }).start(() => {
+      setShowRainbowBlood(false);
+    });
+  };
+
+  // Add function to show damage number
+  const showDamageIndicator = (damage: number) => {
+    setDamageAmount(damage);
+    setShowDamageNumber(true);
+    damageNumberAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(damageNumberAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(damageNumberAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setShowDamageNumber(false);
+    });
+  };
+
+  // Ensure health bar anim values are always in sync with max health
+  useEffect(() => {
+    // Whenever maxHealth changes (e.g., More Health skill), update the animation value
+    playerHealthBarAnim.setValue(playerHealth);
+  }, [maxHealth, playerHealth]);
+
+  useEffect(() => {
+    // Whenever enemy maxHealth changes, update the animation value
+    enemyHealthBarAnim.setValue(enemy.health);
+  }, [enemy.maxHealth, enemy.health]);
 
   if (!backgroundMap) {
     return (
@@ -382,6 +613,18 @@ const BattleSystem = () => {
         resizeMode="cover"
       >
         <View style={[styles.overlay, isPaused && styles.pausedOverlay]}>
+          {/* Buffs Display */}
+          {activeBuffs.length > 0 && (
+            <View style={styles.buffsContainer}>
+              <Text style={[styles.buffsLabel, { fontFamily: 'PixelifySans' }]}>Buffs:</Text>
+              {activeBuffs.map((buff, index) => (
+                <Text key={index} style={[styles.buffText, { fontFamily: 'PixelifySans' }]}>
+                  {buff}
+                </Text>
+              ))}
+            </View>
+          )}
+
           {/* Timer Container */}
           <View style={styles.statusContainer}>
             <View style={styles.timerContainer}>
@@ -400,7 +643,7 @@ const BattleSystem = () => {
                     style={[
                       styles.enemyHealthBar, 
                       { 
-                        width: enemyHealthAnim.interpolate({
+                        width: enemyHealthBarAnim.interpolate({
                           inputRange: [0, enemy.maxHealth],
                           outputRange: ['0%', '100%']
                         })
@@ -428,11 +671,134 @@ const BattleSystem = () => {
           <View style={styles.battleArena}>
             {/* Player Side */}
             <View style={styles.playerSide}>
-              <Image 
-                source={{ uri: playerImageUrl }}
-                style={styles.playerCharacterImage}
-                resizeMode="contain"
-              />
+              <Animated.View
+                style={{
+                  transform: [{
+                    translateX: playerShakeAnim
+                  }]
+                }}
+              >
+                <Image 
+                  source={{ uri: playerImageUrl }}
+                  style={[
+                    styles.playerCharacterImage,
+                    playerImageUrl === 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/idle%20na%20malupittt.gif'
+                      ? { width: 240, height: 240 }
+                      : {}
+                  ]}
+                  resizeMode="contain"
+                />
+                {showDamageNumber && (
+                  <Animated.Text
+                    style={[
+                      styles.damageNumber,
+                      {
+                        opacity: damageNumberAnim,
+                        transform: [
+                          {
+                            translateY: damageNumberAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0, -50]
+                            })
+                          },
+                          {
+                            scale: damageNumberAnim.interpolate({
+                              inputRange: [0, 0.5, 1],
+                              outputRange: [0.5, 1.2, 1]
+                            })
+                          }
+                        ]
+                      }
+                    ]}
+                  >
+                    -{damageAmount}
+                  </Animated.Text>
+                )}
+                {showRainbowBlood && (
+                  <>
+                    {/* Blood drips */}
+                    {[...Array(15)].map((_, index) => (
+                      <Animated.View
+                        key={index}
+                        style={[
+                          styles.bloodContainer,
+                          {
+                            opacity: rainbowBloodAnim.interpolate({
+                              inputRange: [0, 0.8, 1],
+                              outputRange: [1, 0.8, 0]
+                            }),
+                            transform: [
+                              {
+                                translateY: rainbowBloodAnim.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [0, 300]
+                                })
+                              },
+                              {
+                                scale: rainbowBloodAnim.interpolate({
+                                  inputRange: [0, 0.3, 1],
+                                  outputRange: [1, 1.2, 0.8]
+                                })
+                              }
+                            ],
+                            left: `${-5 + (index * 7)}%`,
+                            top: `${20 + (index % 3) * 5}%`,
+                            width: 8 + Math.random() * 4,
+                            height: 12 + Math.random() * 8,
+                          }
+                        ]}
+                      >
+                        <View 
+                          style={[
+                            styles.bloodDrop,
+                            {
+                              backgroundColor: `rgba(139, 0, 0, ${0.8 + Math.random() * 0.2})`,
+                              borderRadius: 4,
+                            }
+                          ]} 
+                        />
+                      </Animated.View>
+                    ))}
+                    {/* Blood splatter on ground */}
+                    {[...Array(8)].map((_, index) => (
+                      <Animated.View
+                        key={`splatter-${index}`}
+                        style={[
+                          styles.bloodSplatterContainer,
+                          {
+                            opacity: rainbowBloodAnim.interpolate({
+                              inputRange: [0.3, 0.8, 1],
+                              outputRange: [0, 1, 0]
+                            }),
+                            transform: [
+                              {
+                                scale: rainbowBloodAnim.interpolate({
+                                  inputRange: [0.3, 0.5, 1],
+                                  outputRange: [0, 1, 1.2]
+                                })
+                              }
+                            ],
+                            left: `${-15 + (index * 8)}%`,
+                            bottom: '0%',
+                            width: 20 + Math.random() * 15,
+                            height: 10 + Math.random() * 8,
+                          }
+                        ]}
+                      >
+                        <View 
+                          style={[
+                            styles.bloodSplatter,
+                            {
+                              backgroundColor: `rgba(139, 0, 0, ${0.6 + Math.random() * 0.4})`,
+                              borderRadius: 8,
+                            }
+                          ]} 
+                        />
+                      </Animated.View>
+                    ))}
+                  </>
+                )}
+              </Animated.View>
             </View>
 
             {/* Enemy Side */}
@@ -444,17 +810,36 @@ const BattleSystem = () => {
                 style={[
                   styles.characterImage,
                   isEnemyAttacking && {
-                    position: 'absolute',
+                    width: 240,
+                    height: 240,
                     transform: [{
                       translateX: enemyAttackAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, 60]
+                        inputRange: [0, 0.1, 0.9, 1],
+                        outputRange: [0, -300, -300, 0]
                       })
                     }]
                   }
                 ]}
                 resizeMode="contain"
               />
+              {showSoru && (
+                <Animated.Text
+                  style={[
+                    styles.soruText,
+                    {
+                      opacity: soruAnim,
+                      transform: [{
+                        scale: soruAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.5, 1.5]
+                        })
+                      }]
+                    }
+                  ]}
+                >
+                  Slash!
+                </Animated.Text>
+              )}
             </View>
           </View>
 
@@ -468,11 +853,8 @@ const BattleSystem = () => {
                     style={[
                       styles.healthBar, 
                       { 
-                        width: playerHealthAnim.interpolate({
-                          inputRange: [0, 100],
-                          outputRange: [0, 100]
-                        }).interpolate({
-                          inputRange: [0, 100],
+                        width: playerHealthBarAnim.interpolate({
+                          inputRange: [0, maxHealth],
                           outputRange: ['0%', '100%']
                         })
                       }
@@ -480,7 +862,7 @@ const BattleSystem = () => {
                   />
                 </View>
                 <Text style={[styles.hpText, { fontFamily: 'PixelifySans' }]}>
-                  {playerHealth}/100
+                  {playerHealth}/{maxHealth}
                 </Text>
               </View>
             </View>
@@ -532,7 +914,9 @@ const BattleSystem = () => {
       <View style={styles.skillsContainer}>
         {skills.map((skill, index) => {
           const isOnCooldown = skillCooldowns[skill.name] > 0;
-          const canUse = isPlayerTurn && playerMana >= skill.manaCost && !isOnCooldown;
+          const isPassive = passiveSkills[skill.name];
+          const isUsed = skill.hasBeenUsed;
+          const canUse = isPlayerTurn && playerMana >= skill.manaCost && !isOnCooldown && !isPassive && !isUsed;
 
           return (
             <TouchableOpacity
@@ -552,7 +936,7 @@ const BattleSystem = () => {
                 index === 2 ? styles.largeSkillIconContainer :
                 index === 1 ? styles.mediumSkillIconContainer :
                 styles.smallSkillIconContainer,
-                isOnCooldown && styles.cooldownOverlay
+                (isOnCooldown || isPassive || isUsed) && styles.cooldownOverlay
               ]}>
                 <Image 
                   source={{ uri: skill.imageUrl }}
@@ -560,13 +944,20 @@ const BattleSystem = () => {
                     index === 2 ? styles.largeSkillIcon :
                     index === 1 ? styles.mediumSkillIcon :
                     styles.smallSkillIcon,
-                    isOnCooldown && styles.cooldownImage
+                    (isOnCooldown || isPassive || isUsed) && styles.cooldownImage
                   ]}
                   resizeMode="contain"
                 />
                 {isOnCooldown && (
                   <View style={styles.cooldownTextContainer}>
                     <Text style={[styles.cooldownText, { fontFamily: 'PixelifySans' }]}>{skillCooldowns[skill.name]}</Text>
+                  </View>
+                )}
+                {(isPassive || isUsed) && (
+                  <View style={styles.cooldownTextContainer}>
+                    <Text style={[styles.cooldownText, { fontFamily: 'PixelifySans' }]}>
+                      {isPassive ? 'PASSIVE' : 'USED'}
+                    </Text>
                   </View>
                 )}
               </View>
@@ -609,6 +1000,19 @@ const BattleSystem = () => {
                 Platform.OS === 'ios' && styles.iosResumeButtonText,
                 { fontFamily: 'PixelifySans' }
               ]}>Resume</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[
+                styles.mainMenuButton,
+                Platform.OS === 'ios' && styles.iosMainMenuButton
+              ]} 
+              onPress={handleReturnToMainMenu}
+            >
+              <Text style={[
+                styles.mainMenuButtonText,
+                Platform.OS === 'ios' && styles.iosMainMenuButtonText,
+                { fontFamily: 'PixelifySans' }
+              ]}>Main Menu</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -686,6 +1090,31 @@ const BattleSystem = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Update the skill message popup */}
+      {showSkillMessage && (
+        <Animated.View style={[
+          styles.skillMessageContainer,
+          skillMessage === "REPLENISHED!" && styles.replenishMessageContainer
+        ]}>
+          {skillMessage === "REPLENISHED!" ? (
+            <View style={styles.replenishContent}>
+              <View style={styles.replenishCross}>
+                <View style={styles.crossLine} />
+                <View style={[styles.crossLine, { transform: [{ rotate: '90deg' }] }]} />
+                <View style={styles.crossGlow} />
+              </View>
+              <Text style={[styles.replenishText, { fontFamily: 'PixelifySans' }]}>
+                {skillMessage}
+              </Text>
+            </View>
+          ) : (
+            <Text style={[styles.skillMessageText, { fontFamily: 'PixelifySans' }]}>
+              {skillMessage}
+            </Text>
+          )}
+        </Animated.View>
+      )}
     </View>
   );
 };
@@ -736,8 +1165,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   playerCharacterImage: {
-    width: 240,
-    height: 240,
+    width: 120,
+    height: 120,
     marginBottom: 8,
   },
   vsContainer: {
@@ -894,43 +1323,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   smallSkillButton: {
-    width: 34,
-    height: 46,
-  },
-  smallSkillIconContainer: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-  },
-  smallSkillIcon: {
-    width: 20,
-    height: 20,
-  },
-  mediumSkillButton: {
     width: 42,
     height: 54,
   },
-  mediumSkillIconContainer: {
+  smallSkillIconContainer: {
     width: 38,
     height: 38,
     borderRadius: 19,
   },
-  mediumSkillIcon: {
+  smallSkillIcon: {
     width: 28,
     height: 28,
   },
-  largeSkillButton: {
+  mediumSkillButton: {
     width: 50,
     height: 62,
   },
-  largeSkillIconContainer: {
+  mediumSkillIconContainer: {
     width: 46,
     height: 46,
     borderRadius: 23,
   },
-  largeSkillIcon: {
+  mediumSkillIcon: {
     width: 36,
     height: 36,
+  },
+  largeSkillButton: {
+    width: 58,
+    height: 70,
+  },
+  largeSkillIconContainer: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+  },
+  largeSkillIcon: {
+    width: 44,
+    height: 44,
   },
   skillIconContainer: {
     backgroundColor: '#2d2d2d',
@@ -1322,6 +1751,210 @@ const styles = StyleSheet.create({
     textShadowColor: '#000',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+  },
+  skillMessageContainer: {
+    position: 'absolute',
+    top: '30%',
+    left: '35%',
+    transform: [{ translateX: -50 }, { translateY: -25 }],
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#20B2AA',
+    shadowColor: '#20B2AA',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  replenishMessageContainer: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  replenishContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  replenishCross: {
+    width: 50,
+    height: 50,
+    marginBottom: 8,
+    position: 'relative',
+  },
+  crossLine: {
+    position: 'absolute',
+    width: '100%',
+    height: 8,
+    backgroundColor: '#22c55e',
+    borderRadius: 4,
+    top: '50%',
+    left: 0,
+    transform: [{ translateY: -4 }],
+    shadowColor: '#22c55e',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  crossGlow: {
+    position: 'absolute',
+    width: '120%',
+    height: '120%',
+    top: '-10%',
+    left: '-10%',
+    borderRadius: 25,
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+    shadowColor: '#22c55e',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  replenishText: {
+    color: '#22c55e',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+    marginTop: 4,
+  },
+  skillMessageText: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: '#20B2AA',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  mainMenuButton: {
+    backgroundColor: '#2d2d2d',
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 0,
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#4a4a4a',
+    borderStyle: 'solid',
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
+    marginTop: 10,
+  },
+  iosMainMenuButton: {
+    backgroundColor: '#6B238E',
+    paddingVertical: 20,
+    paddingHorizontal: 50,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  mainMenuButtonText: {
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 0,
+  },
+  iosMainMenuButtonText: {
+    fontSize: 28,
+    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  buffsContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 40,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#4a4a4a',
+    zIndex: 20,
+  },
+  buffsLabel: {
+    color: '#FFB23F',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  buffText: {
+    color: '#ffffff',
+    fontSize: 12,
+    marginBottom: 2,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  soruText: {
+    position: 'absolute',
+    color: '#FFB23F',
+    fontSize: 32,
+    fontWeight: 'bold',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+    fontFamily: 'PixelifySans',
+    transform: [{ rotate: '-15deg' }],
+    zIndex: 100,
+  },
+  bloodContainer: {
+    position: 'absolute',
+    transform: [{ translateX: -4 }, { translateY: -6 }],
+    zIndex: 100,
+    marginLeft: -20,
+  },
+  bloodDrop: {
+    width: '100%',
+    height: '100%',
+    shadowColor: '#8B0000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  bloodSplatterContainer: {
+    position: 'absolute',
+    transform: [{ translateX: -10 }, { translateY: -5 }],
+    zIndex: 99,
+  },
+  bloodSplatter: {
+    width: '100%',
+    height: '100%',
+    shadowColor: '#8B0000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 1,
+    elevation: 2,
+  },
+  damageNumber: {
+    position: 'absolute',
+    top: '20%',
+    left: '50%',
+    transform: [{ translateX: -20 }],
+    color: '#FF0000',
+    fontSize: 32,
+    fontWeight: 'bold',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+    fontFamily: 'PixelifySans',
+    zIndex: 1000,
   },
 });
 
