@@ -25,18 +25,20 @@ interface Enemy {
 
 const BattleSystem = () => {
   const router = useRouter();
-  const { playerName, selectedSkills, playerImageUrl } = useLocalSearchParams<{ 
+  const { playerName, selectedSkills, playerImageUrl, difficulty, enemyHealth } = useLocalSearchParams<{ 
     playerName: string;
     selectedSkills: string;
     playerImageUrl: string;
+    difficulty: string;
+    enemyHealth: string;
   }>();
   const [playerHealth, setPlayerHealth] = useState(100);
   const [playerMana, setPlayerMana] = useState(100);
   const [enemy, setEnemy] = useState<Enemy>({
     name: 'Samurai',
-    health: 100,
-    maxHealth: 100,
-    damage: 35,
+    health: parseInt(enemyHealth) || 100,
+    maxHealth: parseInt(enemyHealth) || 100,
+    damage: 25 ,
     imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/samurai%20idle.gif'
   });
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
@@ -98,6 +100,11 @@ const BattleSystem = () => {
     setBackgroundMap(randomMap);
   }, []);
 
+  // Initialize enemy health bar to max
+  useEffect(() => {
+    enemyHealthAnim.setValue(enemy.maxHealth);
+  }, []);
+
   // Update health animations with smoother transitions
   const animateHealthChange = (currentHealth: number, targetHealth: number, animValue: Animated.Value) => {
     Animated.spring(animValue, {
@@ -137,59 +144,12 @@ const BattleSystem = () => {
     return () => clearInterval(cooldownInterval);
   }, []);
 
-  // Add this function to show turn notifications
-  const showTurnPopup = (text: string) => {
-    setTurnNotificationText(text);
-    setShowTurnNotification(true);
-    Animated.sequence([
-      Animated.spring(turnNotificationAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        friction: 8,
-        tension: 40,
-      }),
-      Animated.delay(1000),
-      Animated.spring(turnNotificationAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        friction: 8,
-        tension: 40,
-      })
-    ]).start(() => {
-      setShowTurnNotification(false);
-    });
-  };
-
-  // Add a helper to show turn notification for a custom duration
-  const showTurnPopupFor = (text: string, duration: number, callback?: () => void) => {
-    setTurnNotificationText(text);
-    setShowTurnNotification(true);
-    Animated.spring(turnNotificationAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 40,
-    }).start(() => {
-      setTimeout(() => {
-        Animated.spring(turnNotificationAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          friction: 8,
-          tension: 40,
-        }).start(() => {
-          setShowTurnNotification(false);
-          if (callback) callback();
-        });
-      }, duration);
-    });
-  };
-
   // Reset flag at the start of each turn
   useEffect(() => {
     setHasDealtDamage(false);
   }, [isPlayerTurn]);
 
-  // Update handleSkillUse to only allow one damage event per player turn
+  // Update handleSkillUse to remove turn notifications
   const handleSkillUse = (skill: Skill) => {
     if (!isPlayerTurn || playerMana < skill.manaCost || skillCooldowns[skill.name] > 0 || hasDealtDamage) return;
     setHasDealtDamage(true);
@@ -219,13 +179,12 @@ const BattleSystem = () => {
     }
 
     setIsPlayerTurn(false);
-    showTurnPopupFor("ENEMY'S TURN", 5000, () => handleEnemyAttack(() => {
+    handleEnemyAttack(() => {
       if (isDodging) {
         setCombatLog(prev => [...prev, 'You successfully dodged the enemy attack!']);
         setIsPlayerTurn(true);
         setTimer(30);
         setIsDodging(false);
-        showTurnPopupFor("YOUR TURN", 1000);
         return;
       }
       if (!hasDealtDamage) {
@@ -240,21 +199,20 @@ const BattleSystem = () => {
       setIsPlayerTurn(true);
       setTimer(30);
       setIsResting(false);
-      showTurnPopupFor("YOUR TURN", 1000);
-    }));
+    });
   };
 
-  // Update handleRest, handleDodge, handleHeal to use hasDealtDamage
+  // Update handleRest to remove turn notifications
   const handleRest = () => {
     if (!isPlayerTurn || hasDealtDamage) return;
-    setHasDealtDamage(true);
+    setHasDealtDamage(true); 
     setIsResting(true);
     const newMana = Math.min(100, playerMana + 50);
     setPlayerMana(newMana);
     animateManaChange(playerMana, newMana);
     setCombatLog(prev => [...prev, 'You take a rest and recover 50 mana!']);
     setIsPlayerTurn(false);
-    showTurnPopupFor("ENEMY'S TURN", 5000, () => handleEnemyAttack(() => {
+    handleEnemyAttack(() => {
       if (!hasDealtDamage) {
         setHasDealtDamage(true);
         const damage = enemy.damage * 2;
@@ -267,25 +225,25 @@ const BattleSystem = () => {
       setIsPlayerTurn(true);
       setTimer(30);
       setIsResting(false);
-      showTurnPopupFor("YOUR TURN", 1000);
-    }));
+    });
   };
 
+  // Update handleDodge to remove turn notifications
   const handleDodge = () => {
     if (!isPlayerTurn || hasDealtDamage) return;
     setHasDealtDamage(true);
     setIsDodging(true);
     setCombatLog(prev => [...prev, 'You prepare to dodge the next attack!']);
     setIsPlayerTurn(false);
-    showTurnPopupFor("ENEMY'S TURN", 5000, () => handleEnemyAttack(() => {
+    handleEnemyAttack(() => {
       setCombatLog(prev => [...prev, 'You successfully dodged the enemy attack!']);
       setIsPlayerTurn(true);
       setTimer(30);
       setIsDodging(false);
-      showTurnPopupFor("YOUR TURN", 1000);
-    }));
+    });
   };
 
+  // Update handleHeal to remove turn notifications
   const handleHeal = () => {
     if (!isPlayerTurn || hasDealtDamage) return;
     setHasDealtDamage(true);
@@ -295,7 +253,7 @@ const BattleSystem = () => {
     animateHealthChange(playerHealth, newHealth, playerHealthAnim);
     setCombatLog(prev => [...prev, `You heal yourself for ${healAmount} HP!`]);
     setIsPlayerTurn(false);
-    showTurnPopupFor("ENEMY'S TURN", 5000, () => handleEnemyAttack(() => {
+    handleEnemyAttack(() => {
       if (!hasDealtDamage) {
         setHasDealtDamage(true);
         const damage = enemy.damage;
@@ -307,16 +265,8 @@ const BattleSystem = () => {
       }
       setIsPlayerTurn(true);
       setTimer(30);
-      showTurnPopupFor("YOUR TURN", 1000);
-    }));
+    });
   };
-
-  // Show YOUR TURN at the start of player's turn
-  useEffect(() => {
-    if (isPlayerTurn) {
-      showTurnPopupFor("YOUR TURN", 1000);
-    }
-  }, [isPlayerTurn]);
 
   const togglePause = () => {
     setIsPaused(prev => !prev);
@@ -331,8 +281,8 @@ const BattleSystem = () => {
     setPlayerMana(100);
     setEnemy({
       name: 'Samurai',
-      health: 100,
-      maxHealth: 100,
+      health: parseInt(enemyHealth) || 100,
+      maxHealth: parseInt(enemyHealth) || 100,
       damage: 35,
       imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/samurai%20idle.gif'
     });
@@ -349,8 +299,8 @@ const BattleSystem = () => {
       setPlayerMana(100);
       setEnemy({
         name: 'Samurai',
-        health: 100,
-        maxHealth: 100,
+        health: parseInt(enemyHealth) || 100,
+        maxHealth: parseInt(enemyHealth) || 100,
         damage: 35,
         imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/samurai%20idle.gif'
       });
@@ -432,48 +382,35 @@ const BattleSystem = () => {
         resizeMode="cover"
       >
         <View style={[styles.overlay, isPaused && styles.pausedOverlay]}>
-          {/* Exit Button */}
-          <TouchableOpacity
-            style={styles.exitButtonContainer}
-            onPress={handleExit}
-          >
-            <FontAwesome name="times" size={24} color="white" />
-          </TouchableOpacity>
-
-          {/* Timer and Turn Indicator */}
+          {/* Timer Container */}
           <View style={styles.statusContainer}>
             <View style={styles.timerContainer}>
               <Text style={[styles.timerText, { fontFamily: 'PixelifySans' }]}>Time: {timer}s</Text>
-            </View>
-            <View style={styles.turnContainer}>
-              <Text style={[styles.statusText, { fontFamily: 'PixelifySans' }]}>
-                {isPlayerTurn ? 'Your Turn' : 'Enemy Turn'}
-              </Text>
             </View>
           </View>
 
           {/* Enemy Health Bar - Top Center */}
           <View style={styles.enemyHealthContainer}>
             <Text style={[styles.barLabel, { width: 'auto', marginBottom: 4, fontFamily: 'PixelifySans' }]}>ENEMY</Text>
-          <View style={styles.barContainer}>
+            <View style={styles.barContainer}>
               <Text style={[styles.barLabel, { fontFamily: 'PixelifySans' }]}>HP</Text>
               <View style={styles.barWrapper}>
-            <View style={styles.barBackground}>
+                <View style={styles.barBackground}>
                   <Animated.View 
                     style={[
                       styles.enemyHealthBar, 
                       { 
                         width: enemyHealthAnim.interpolate({
                           inputRange: [0, enemy.maxHealth],
-                          outputRange: [0, 100]
-                        }).interpolate({
-                          inputRange: [0, 100],
                           outputRange: ['0%', '100%']
                         })
                       }
                     ]} 
                   />
                 </View>
+                <Text style={[styles.hpText, { fontFamily: 'PixelifySans' }]}>
+                  {enemy.health}/{enemy.maxHealth}
+                </Text>
               </View>
             </View>
           </View>
@@ -493,7 +430,7 @@ const BattleSystem = () => {
             <View style={styles.playerSide}>
               <Image 
                 source={{ uri: playerImageUrl }}
-                style={styles.characterImage}
+                style={styles.playerCharacterImage}
                 resizeMode="contain"
               />
             </View>
@@ -511,7 +448,7 @@ const BattleSystem = () => {
                     transform: [{
                       translateX: enemyAttackAnim.interpolate({
                         inputRange: [0, 1],
-                        outputRange: [0, 60] // Move 60px to the right (adjust as needed)
+                        outputRange: [0, 60]
                       })
                     }]
                   }
@@ -542,6 +479,9 @@ const BattleSystem = () => {
                     ]} 
                   />
                 </View>
+                <Text style={[styles.hpText, { fontFamily: 'PixelifySans' }]}>
+                  {playerHealth}/100
+                </Text>
               </View>
             </View>
             <View style={styles.barContainer}>
@@ -562,39 +502,39 @@ const BattleSystem = () => {
                       }
                     ]} 
                   />
+                </View>
+              </View>
             </View>
           </View>
         </View>
-        </View>
-        </View>
       </ImageBackground>
 
-          {/* Rest Button - Left Side */}
-          <TouchableOpacity
-            style={[
-              styles.restButtonContainer,
-              !isPlayerTurn && styles.disabledButton
-            ]}
-            onPress={handleRest}
-            disabled={!isPlayerTurn}
-          >
-            <View style={[styles.skillIconContainer, { width: 65, height: 65, borderRadius: 32.5 }]}>
-              <Image 
-                source={{ uri: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/zzz-removebg-preview.png' }}
-                style={{ width: 45, height: 45 }}
-                resizeMode="contain"
-              />
-            </View>
+      {/* Rest Button - Left Side */}
+      <TouchableOpacity
+        style={[
+          styles.restButtonContainer,
+          !isPlayerTurn && styles.disabledButton
+        ]}
+        onPress={handleRest}
+        disabled={!isPlayerTurn}
+      >
+        <View style={[styles.skillIconContainer, { width: 65, height: 65, borderRadius: 32.5 }]}>
+          <Image 
+            source={{ uri: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/zzz-removebg-preview.png' }}
+            style={{ width: 45, height: 45 }}
+            resizeMode="contain"
+          />
+        </View>
         <Text style={[styles.skillName, { fontFamily: 'PixelifySans' }]}>REST</Text>
-          </TouchableOpacity>
+      </TouchableOpacity>
 
-          {/* Skills Container - Right Side */}
-        <View style={styles.skillsContainer}>
-            {skills.map((skill, index) => {
+      {/* Skills Container - Right Side */}
+      <View style={styles.skillsContainer}>
+        {skills.map((skill, index) => {
           const isOnCooldown = skillCooldowns[skill.name] > 0;
           const canUse = isPlayerTurn && playerMana >= skill.manaCost && !isOnCooldown;
 
-              return (
+          return (
             <TouchableOpacity
               key={index}
               style={[
@@ -614,16 +554,16 @@ const BattleSystem = () => {
                 styles.smallSkillIconContainer,
                 isOnCooldown && styles.cooldownOverlay
               ]}>
-                    <Image 
-                      source={{ uri: skill.imageUrl }}
+                <Image 
+                  source={{ uri: skill.imageUrl }}
                   style={[
                     index === 2 ? styles.largeSkillIcon :
                     index === 1 ? styles.mediumSkillIcon :
                     styles.smallSkillIcon,
                     isOnCooldown && styles.cooldownImage
                   ]}
-                      resizeMode="contain"
-                    />
+                  resizeMode="contain"
+                />
                 {isOnCooldown && (
                   <View style={styles.cooldownTextContainer}>
                     <Text style={[styles.cooldownText, { fontFamily: 'PixelifySans' }]}>{skillCooldowns[skill.name]}</Text>
@@ -633,46 +573,46 @@ const BattleSystem = () => {
               <Text style={[styles.skillName, { fontFamily: 'PixelifySans' }]}>{skill.name}</Text>
               <Text style={[styles.manaCostText, { fontFamily: 'PixelifySans' }]}>{skill.manaCost} MP</Text>
             </TouchableOpacity>
-              );
-            })}
-        </View>
+          );
+        })}
+      </View>
 
-        {/* Pause Button */}
-        <TouchableOpacity style={styles.pauseButton} onPress={togglePause}>
-            <FontAwesome name={isPaused ? "play" : "pause"} size={24} color="white" />
-          </TouchableOpacity>
+      {/* Pause Button */}
+      <TouchableOpacity style={styles.pauseButton} onPress={togglePause}>
+        <FontAwesome name={isPaused ? "play" : "pause"} size={24} color="white" />
+      </TouchableOpacity>
 
-          {/* Pause Screen */}
-          {isPaused && (
-            <View style={[
-              styles.pauseScreenContainer,
-              Platform.OS === 'ios' && styles.iosPauseScreenContainer
-            ]}>
-              <View style={[
-                styles.pauseScreenContent,
-                Platform.OS === 'ios' && styles.iosPauseScreenContent
-              ]}>
-                <Text style={[
-                  styles.pauseScreenTitle,
+      {/* Pause Screen */}
+      {isPaused && (
+        <View style={[
+          styles.pauseScreenContainer,
+          Platform.OS === 'ios' && styles.iosPauseScreenContainer
+        ]}>
+          <View style={[
+            styles.pauseScreenContent,
+            Platform.OS === 'ios' && styles.iosPauseScreenContent
+          ]}>
+            <Text style={[
+              styles.pauseScreenTitle,
               Platform.OS === 'ios' && styles.iosPauseScreenTitle,
               { fontFamily: 'PixelifySans' }
-                ]}>Game Paused</Text>
-                <TouchableOpacity 
-                  style={[
-                    styles.resumeButton,
-                    Platform.OS === 'ios' && styles.iosResumeButton
-                  ]} 
-                  onPress={togglePause}
-                >
-                  <Text style={[
-                    styles.resumeButtonText,
+            ]}>Game Paused</Text>
+            <TouchableOpacity 
+              style={[
+                styles.resumeButton,
+                Platform.OS === 'ios' && styles.iosResumeButton
+              ]} 
+              onPress={togglePause}
+            >
+              <Text style={[
+                styles.resumeButtonText,
                 Platform.OS === 'ios' && styles.iosResumeButtonText,
                 { fontFamily: 'PixelifySans' }
-                  ]}>Resume</Text>
-        </TouchableOpacity>
-      </View>
-            </View>
-          )}
+              ]}>Resume</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Game Over Modal */}
       <Modal
@@ -717,28 +657,6 @@ const BattleSystem = () => {
           </View>
         </View>
       </Modal>
-
-      {/* Turn Notification Popup */}
-      {showTurnNotification && (
-        <Animated.View
-          style={[
-            styles.turnNotificationContainer,
-            {
-              opacity: turnNotificationAnim,
-              transform: [
-                {
-                  scale: turnNotificationAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.8, 1]
-                  })
-                }
-              ]
-            }
-          ]}
-        >
-          <Text style={[styles.turnNotificationText, { fontFamily: 'PixelifySans' }]}>{turnNotificationText}</Text>
-        </Animated.View>
-      )}
 
       {/* Exit Confirmation Modal */}
       <Modal
@@ -815,6 +733,11 @@ const styles = StyleSheet.create({
   characterImage: {
     width: 120,
     height: 120,
+    marginBottom: 8,
+  },
+  playerCharacterImage: {
+    width: 240,
+    height: 240,
     marginBottom: 8,
   },
   vsContainer: {
@@ -940,8 +863,12 @@ const styles = StyleSheet.create({
   },
   enemyHealthBar: {
     height: '100%',
-    backgroundColor: '#22c55e',
+    backgroundColor: '#dc2626',
     borderRadius: 4,
+    shadowColor: '#dc2626',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
   },
   skillsContainer: {
     flexDirection: 'row',
@@ -1385,6 +1312,16 @@ const styles = StyleSheet.create({
   exitButton: {
     backgroundColor: '#dc2626',
     borderColor: '#991b1b',
+  },
+  hpText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 2,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 });
 

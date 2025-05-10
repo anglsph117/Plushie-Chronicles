@@ -47,6 +47,21 @@ const GameDifficulties = () => {
     const [videoReady, setVideoReady] = useState(false)
     const videoRef = useRef<Video>(null)
 
+    const handleConfirm = () => {
+        const difficultySettings = {
+            easy: { health: 100 },
+            medium: { health: 200 },
+            hard: { health: 300 }
+        }
+        router.push({
+            pathname: '/(home)/HeroCustomization',
+            params: { 
+                difficulty: selectedDifficulty,
+                enemyHealth: difficultySettings[selectedDifficulty as keyof typeof difficultySettings].health
+            }
+        })
+    }
+
     const StyledText = styled(Text, {
         color: "#FFFFFF",
         fontSize: 20,
@@ -190,7 +205,7 @@ const GameDifficulties = () => {
                         </YStack>
 
                         <Pressable
-                            onPress={() => router.push('/(home)/HeroCustomization')}
+                            onPress={handleConfirm}
                             style={({ pressed }: { pressed: boolean }) => [
                                 styles.confirmButton,
                                 {

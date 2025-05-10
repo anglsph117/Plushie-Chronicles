@@ -24,7 +24,7 @@ const skillsData: Skill[] = [
         imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/boulder-removebg-preview.png',
         selected: false,
         cooldown: 8,
-        damage: 120
+        damage: 30
     },
     {
         id: 2,
@@ -33,7 +33,7 @@ const skillsData: Skill[] = [
         imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/cryo_crystals-removebg-preview.png',
         selected: false,
         cooldown: 6,
-        damage: 80
+        damage: 30
     },
     {
         id: 3,
@@ -42,7 +42,7 @@ const skillsData: Skill[] = [
         imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/elemental_sword_master-removebg-preview.png',
         selected: false,
         cooldown: 4,
-        damage: 100
+        damage: 30
     },
     {
         id: 4,
@@ -60,7 +60,7 @@ const skillsData: Skill[] = [
         imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/fireball-removebg-preview.png',
         selected: false,
         cooldown: 5,
-        damage: 90
+        damage: 35
     },
     {
         id: 6,
@@ -69,7 +69,7 @@ const skillsData: Skill[] = [
         imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/flurries-removebg-preview.png',
         selected: false,
         cooldown: 3,
-        damage: 60
+        damage: 20
     },
     {
         id: 7,
@@ -78,7 +78,7 @@ const skillsData: Skill[] = [
         imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/heavy_slash-removebg-preview.png',
         selected: false,
         cooldown: 7,
-        damage: 150
+        damage: 35
     },
     {
         id: 8,
@@ -96,7 +96,7 @@ const skillsData: Skill[] = [
         imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/quick_slash-removebg-preview.png',
         selected: false,
         cooldown: 2,
-        damage: 40
+        damage: 20
     },
     {
         id: 10,
@@ -141,7 +141,7 @@ const skillsData: Skill[] = [
         imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/thrust-removebg-preview.png',
         selected: false,
         cooldown: 5,
-        damage: 110
+        damage: 30
     },
     {
         id: 15,
@@ -150,7 +150,7 @@ const skillsData: Skill[] = [
         imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/water_shot-removebg-preview.png',
         selected: false,
         cooldown: 4,
-        damage: 70
+        damage: 30
     }
 ];
 
@@ -193,9 +193,11 @@ const StyledText = ({ children }: { children: React.ReactNode }) => (
 );
 
 const SkillsSelection = () => {
-    const { playerName, playerImageUrl } = useLocalSearchParams<{ 
+    const { playerName, playerImageUrl, difficulty, enemyHealth } = useLocalSearchParams<{ 
         playerName: string;
         playerImageUrl: string;
+        difficulty: string;
+        enemyHealth: string;
     }>();
     const [skills, setSkills] = useState<Skill[]>(skillsData);
     const [selectedSkills, setSelectedSkills] = useState<Skill[]>([]);
@@ -245,7 +247,9 @@ const SkillsSelection = () => {
                 params: { 
                     playerName,
                     playerImageUrl,
-                    selectedSkills: JSON.stringify(selectedSkills)
+                    selectedSkills: JSON.stringify(selectedSkills),
+                    difficulty,
+                    enemyHealth
                 }
             });
         }

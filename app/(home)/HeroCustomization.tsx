@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { Image, styled, XStack } from 'tamagui'
 import { Video, ResizeMode } from 'expo-av'
 const bgvid = require('../../assets/bgvid.mp4');
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 
@@ -22,7 +22,7 @@ const heroes: Hero[] = [
     {
         id: '1',
         gender: "Male",
-        imageUrl: "https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/483269186_3955953094720582_9100427565649854067_n-removebg-preview.png"
+        imageUrl: "https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/idle%20na%20malupittt.gif"
     },
     {
         id: '2',
@@ -47,6 +47,10 @@ const heroes: Hero[] = [
 ]
 
 const HeroCustomization = () => {
+    const { difficulty, enemyHealth } = useLocalSearchParams<{
+        difficulty: string;
+        enemyHealth: string;
+    }>();
     const [selectedHero, setSelectedHero] = useState<string>('')
     const [heroName, setHeroName] = useState('')
     const videoRef = React.useRef<Video>(null);
@@ -316,7 +320,9 @@ const HeroCustomization = () => {
                                         pathname: '/(home)/SkillsSelection',
                                         params: { 
                                             playerName: heroName.trim(),
-                                            playerImageUrl: selectedHeroData?.imageUrl
+                                            playerImageUrl: selectedHeroData?.imageUrl,
+                                            difficulty,
+                                            enemyHealth
                                         }
                                     });
                                 }
