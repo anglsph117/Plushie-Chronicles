@@ -633,10 +633,10 @@ const BattleSystem = () => {
           </View>
 
           {/* Enemy Health Bar - Top Center */}
-          <View style={styles.enemyHealthContainer}>
-            <Text style={[styles.barLabel, { width: 'auto', marginBottom: 4, fontFamily: 'PixelifySans' }]}>ENEMY</Text>
+          <View style={[styles.enemyHealthContainer, { top: 40 }]}>
             <View style={styles.barContainer}>
               <Text style={[styles.barLabel, { fontFamily: 'PixelifySans' }]}>HP</Text>
+              <Text style={[styles.hpText, { fontFamily: 'PixelifySans', marginLeft: 4 }]}> {enemy.health}/{enemy.maxHealth}</Text>
               <View style={styles.barWrapper}>
                 <View style={styles.barBackground}>
                   <Animated.View 
@@ -651,20 +651,15 @@ const BattleSystem = () => {
                     ]} 
                   />
                 </View>
-                <Text style={[styles.hpText, { fontFamily: 'PixelifySans' }]}>
-                  {enemy.health}/{enemy.maxHealth}
-                </Text>
               </View>
             </View>
           </View>
 
-          {/* VS Text and Names Container */}
-          <View style={styles.vsContainer}>
-            <Text style={[styles.vsText, { fontFamily: 'PixelifySans' }]}>V.S</Text>
-            <View style={styles.namesContainer}>
-              <Text style={[styles.nameText, { fontFamily: 'PixelifySans' }]}>{playerName}</Text>
-              <Text style={[styles.nameText, { fontFamily: 'PixelifySans' }]}>{enemy.name}</Text>
-            </View>
+          {/* VS and Names Centered */}
+          <View style={[styles.centeredNamesContainer, { top: 60 }]}>
+            <Text style={[styles.nameText, { fontFamily: 'PixelifySans', marginRight: 12, fontWeight: '900' }]}>{playerName}</Text>
+            <Text style={[styles.vsText, { fontFamily: 'PixelifySans', marginHorizontal: 12 }]}>V.S</Text>
+            <Text style={[styles.nameText, { fontFamily: 'PixelifySans', marginLeft: 12, fontWeight: '900' }]}>{enemy.name}</Text>
           </View>
 
           {/* Battle Arena Layout */}
@@ -846,7 +841,7 @@ const BattleSystem = () => {
           {/* Player Health/Mana Bars - Bottom Center */}
           <View style={styles.playerStatusContainer}>
             <View style={styles.barContainer}>
-              <Text style={[styles.barLabel, { fontFamily: 'PixelifySans' }]}>HP</Text>
+              <Text style={[styles.barLabel, { fontFamily: 'PixelifySans', marginLeft: 8 }]}>HP</Text>
               <View style={styles.barWrapper}>
                 <View style={styles.barBackground}>
                   <Animated.View 
@@ -867,7 +862,7 @@ const BattleSystem = () => {
               </View>
             </View>
             <View style={styles.barContainer}>
-              <Text style={[styles.barLabel, { fontFamily: 'PixelifySans' }]}>MP</Text>
+              <Text style={[styles.barLabel, { fontFamily: 'PixelifySans', marginLeft: 8 }]}>MP</Text>
               <View style={styles.barWrapper}>
                 <View style={styles.barBackground}>
                   <Animated.View 
@@ -941,12 +936,10 @@ const BattleSystem = () => {
                 <Image 
                   source={{ uri: skill.imageUrl }}
                   style={[
-                    index === 2 ? styles.largeSkillIcon :
-                    index === 1 ? styles.mediumSkillIcon :
-                    styles.smallSkillIcon,
+                    styles.equalSkillIcon,
                     (isOnCooldown || isPassive || isUsed) && styles.cooldownImage
                   ]}
-                  resizeMode="contain"
+                  resizeMode="cover"
                 />
                 {isOnCooldown && (
                   <View style={styles.cooldownTextContainer}>
@@ -1601,7 +1594,7 @@ const styles = StyleSheet.create({
   },
   enemyHealthContainer: {
     position: 'absolute',
-    top: 10,
+    top: 40,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -1955,6 +1948,27 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
     fontFamily: 'PixelifySans',
     zIndex: 1000,
+  },
+  centeredNamesContainer: {
+    position: 'absolute',
+    top: 60,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  equalSkillIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#222',
+    overflow: 'hidden',
+  },
+  equalSkillIcon: {
+    width: '100%',
+    height: '100%',
   },
 });
 
