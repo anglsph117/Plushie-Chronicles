@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Text, YStack, XStack, Button } from 'tamagui'
 import { styled } from 'tamagui'
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
-import bgvid from "../../assets/bgvid.mp4";
+const bgvid = require("../../assets/bgvid.mp4");
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import LoadingScreen from '../../components/LoadingScreen';
@@ -35,6 +35,7 @@ const SettingsText = styled(Text, {
     textShadowColor: '#20B2AA',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+    fontFamily: 'PixelifySans'
 });
 
 const ControlButton = styled(Button, {
@@ -308,6 +309,7 @@ const styles = StyleSheet.create({
         padding: 8,
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         borderRadius: 5,
+        fontFamily: 'PixelifySans'
     },
     scrollView: {
         flex: 1,
@@ -340,7 +342,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textShadowColor: '#20B2AA',
         textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2
+        textShadowRadius: 2,
+        fontFamily: 'PixelifySans'
     },
     title: {
         fontSize: 24,
@@ -350,6 +353,7 @@ const styles = StyleSheet.create({
         textShadowColor: '#20B2AA',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 4,
+        fontFamily: 'PixelifySans'
     },
     volumeBarContainer: {
         flex: 1,

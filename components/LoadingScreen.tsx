@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
         textShadowColor: '#6B238E',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 4,
-        fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+        fontFamily: 'PixelifySans',
     },
     progressBarContainer: {
         width: '100%',
@@ -166,6 +166,6 @@ const styles = StyleSheet.create({
         textShadowColor: '#20B2AA',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 2,
-        fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+        fontFamily: 'PixelifySans',
     },
 });

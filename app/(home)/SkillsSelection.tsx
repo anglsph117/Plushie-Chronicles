@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, Dimensions, Animated } from 'react-native'
 import React, { useState, useRef, useEffect } from 'react'
 import { Video, ResizeMode } from 'expo-av'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { styled } from 'tamagui'
 import { Button, YStack, XStack } from 'tamagui'
 
@@ -21,7 +21,7 @@ const skillsData: Skill[] = [
         id: 1,
         name: 'Boulder',
         description: 'Summon a massive boulder to crush enemies',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/boulder.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/boulder-removebg-preview.png',
         selected: false,
         cooldown: 8,
         damage: 120
@@ -30,7 +30,7 @@ const skillsData: Skill[] = [
         id: 2,
         name: 'Cryo Crystals',
         description: 'Create ice crystals that freeze enemies',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/cryo%20crystals.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/cryo_crystals-removebg-preview.png',
         selected: false,
         cooldown: 6,
         damage: 80
@@ -39,7 +39,7 @@ const skillsData: Skill[] = [
         id: 3,
         name: 'Elemental Sword Master',
         description: 'Master the art of elemental sword combat',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/elemental%20sword%20master.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/elemental_sword_master-removebg-preview.png',
         selected: false,
         cooldown: 4,
         damage: 100
@@ -48,7 +48,7 @@ const skillsData: Skill[] = [
         id: 4,
         name: 'Enlightenment',
         description: 'Gain deep understanding of combat techniques',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/enlightenment.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/enlightenment-removebg-preview.png',
         selected: false,
         cooldown: 10,
         damage: 0
@@ -57,7 +57,7 @@ const skillsData: Skill[] = [
         id: 5,
         name: 'Fireball',
         description: 'Launch a powerful fireball at enemies',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/fireball.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/fireball-removebg-preview.png',
         selected: false,
         cooldown: 5,
         damage: 90
@@ -66,7 +66,7 @@ const skillsData: Skill[] = [
         id: 6,
         name: 'Flurries',
         description: 'Execute rapid sword strikes',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/flurries.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/flurries-removebg-preview.png',
         selected: false,
         cooldown: 3,
         damage: 60
@@ -75,7 +75,7 @@ const skillsData: Skill[] = [
         id: 7,
         name: 'Heavy Slash',
         description: 'Perform a devastating sword slash',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/heavy%20slash.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/heavy_slash-removebg-preview.png',
         selected: false,
         cooldown: 7,
         damage: 150
@@ -84,7 +84,7 @@ const skillsData: Skill[] = [
         id: 8,
         name: 'More Health',
         description: 'Increase your maximum health',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/more%20health.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/more_health-removebg-preview.png',
         selected: false,
         cooldown: 0,
         damage: 0
@@ -93,7 +93,7 @@ const skillsData: Skill[] = [
         id: 9,
         name: 'Quick Slash',
         description: 'Execute a fast sword slash',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/quick%20slash.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/quick_slash-removebg-preview.png',
         selected: false,
         cooldown: 2,
         damage: 40
@@ -102,7 +102,7 @@ const skillsData: Skill[] = [
         id: 10,
         name: 'Quick Step',
         description: 'Move quickly to dodge attacks',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/quick%20step.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/quick_step-removebg-preview.png',
         selected: false,
         cooldown: 4,
         damage: 0
@@ -111,7 +111,7 @@ const skillsData: Skill[] = [
         id: 11,
         name: 'Replenish',
         description: 'Restore health and energy',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/replenish.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/replenish-removebg-preview.png',
         selected: false,
         cooldown: 12,
         damage: 0
@@ -120,7 +120,7 @@ const skillsData: Skill[] = [
         id: 12,
         name: 'Swift',
         description: 'Increase movement speed',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/swift.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/swift-removebg-preview.png',
         selected: false,
         cooldown: 0,
         damage: 0
@@ -129,7 +129,7 @@ const skillsData: Skill[] = [
         id: 13,
         name: 'Sword Blessing',
         description: 'Enhance sword damage',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/sword%20blessing.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/sword_blessing-removebg-preview.png',
         selected: false,
         cooldown: 15,
         damage: 0
@@ -138,7 +138,7 @@ const skillsData: Skill[] = [
         id: 14,
         name: 'Thrust',
         description: 'Perform a powerful thrust attack',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/thrust.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/thrust-removebg-preview.png',
         selected: false,
         cooldown: 5,
         damage: 110
@@ -147,7 +147,7 @@ const skillsData: Skill[] = [
         id: 15,
         name: 'Water Shot',
         description: 'Launch a water projectile',
-        imageUrl: 'https://ajmhkwiqsnuilsacrxby.supabase.co/storage/v1/object/public/monkey-images/skills/water%20shot.jpg',
+        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/water_shot-removebg-preview.png',
         selected: false,
         cooldown: 4,
         damage: 70
@@ -186,17 +186,24 @@ const StyledText = ({ children }: { children: React.ReactNode }) => (
             height: 1,
         },
         textShadowRadius: 6,
+        fontFamily: 'Jersey10',
     }}>
         {children}
     </Text>
 );
 
 const SkillsSelection = () => {
+    const { playerName, playerImageUrl } = useLocalSearchParams<{ 
+        playerName: string;
+        playerImageUrl: string;
+    }>();
     const [skills, setSkills] = useState<Skill[]>(skillsData);
     const [selectedSkills, setSelectedSkills] = useState<Skill[]>([]);
     const videoRef = React.useRef<Video>(null);
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scaleAnim = useRef(new Animated.Value(0.9)).current;
+    const [selectedCount, setSelectedCount] = useState(0);
+    const MAX_SELECTED_SKILLS = 3;
 
     useEffect(() => {
         Animated.parallel([
@@ -215,17 +222,33 @@ const SkillsSelection = () => {
     }, []);
 
     const toggleSkill = (skillId: number) => {
-        const updatedSkills = skills.map(skill => {
-            if (skill.id === skillId) {
-                if (!skill.selected && selectedSkills.length >= 3) {
-                    return skill;
+        const updatedSkills = skills.map(s => {
+            if (s.id === skillId) {
+                const newSelectedState = !s.selected;
+                if (newSelectedState && selectedSkills.length >= MAX_SELECTED_SKILLS) {
+                    return s; // Don't allow selection if max skills reached
                 }
-                return { ...skill, selected: !skill.selected };
+                return { ...s, selected: newSelectedState };
             }
-            return skill;
+            return s;
         });
         setSkills(updatedSkills);
-        setSelectedSkills(updatedSkills.filter(skill => skill.selected));
+        const newSelectedSkills = updatedSkills.filter(s => s.selected);
+        setSelectedSkills(newSelectedSkills);
+        setSelectedCount(newSelectedSkills.length);
+    };
+
+    const handleConfirm = () => {
+        if (selectedSkills.length === 3) {
+            router.push({
+                pathname: '/(home)/BattleSystem',
+                params: { 
+                    playerName,
+                    playerImageUrl,
+                    selectedSkills: JSON.stringify(selectedSkills)
+                }
+            });
+        }
     };
 
     return (
@@ -250,7 +273,7 @@ const SkillsSelection = () => {
                 <View style={styles.header}>
                     <View style={styles.titleContainer}>
                         <Text style={styles.title}>Select Your Skills</Text>
-                        <Text style={styles.subtitle}>Choose up to 3 skills to start your journey</Text>
+                        <Text style={styles.subtitle}>Choose {MAX_SELECTED_SKILLS} skills to continue</Text>
                     </View>
                     <TouchableOpacity
                         style={styles.backButton}
@@ -262,7 +285,7 @@ const SkillsSelection = () => {
 
                 <View style={styles.mainContent}>
                     <View style={styles.column}>
-                        <Text style={styles.columnTitle}>Selected Skills ({selectedSkills.length}/3)</Text>
+                        <Text style={styles.columnTitle}>Selected Skills ({selectedSkills.length}/{MAX_SELECTED_SKILLS})</Text>
                         <ScrollView style={styles.selectedSkillsContainer}>
                             {selectedSkills.map((skill) => (
                                 <Animated.View
@@ -347,6 +370,20 @@ const SkillsSelection = () => {
                         </ScrollView>
                     </View>
                 </View>
+
+                {/* Continue Button */}
+                <TouchableOpacity
+                    style={[
+                        styles.continueButton,
+                        selectedCount !== MAX_SELECTED_SKILLS && styles.disabledButton
+                    ]}
+                    onPress={handleConfirm}
+                    disabled={selectedCount !== MAX_SELECTED_SKILLS}
+                >
+                    <Text style={styles.continueButtonText}>
+                        {selectedCount === MAX_SELECTED_SKILLS ? 'Continue to Battle' : `Select ${MAX_SELECTED_SKILLS - selectedCount} more skills`}
+                    </Text>
+                </TouchableOpacity>
             </Animated.View>
         </View>
     )
@@ -388,12 +425,14 @@ const styles = StyleSheet.create({
         textShadowColor: '#20B2AA',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 6,
+        fontFamily: 'Jersey10',
     },
     subtitle: {
         color: '#FFFFFF',
         fontSize: 12,
         textAlign: 'left',
         opacity: 0.8,
+        fontFamily: 'Jersey10',
     },
     backButton: {
         backgroundColor: 'rgba(107, 35, 142, 0.7)',
@@ -407,6 +446,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 14,
         fontWeight: 'bold',
+        fontFamily: 'Jersey10',
     },
     mainContent: {
         flex: 1,
@@ -428,6 +468,7 @@ const styles = StyleSheet.create({
         textShadowColor: '#20B2AA',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 4,
+        fontFamily: 'Jersey10',
     },
     selectedSkillsContainer: {
         flex: 1,
@@ -504,7 +545,8 @@ const styles = StyleSheet.create({
         marginBottom: 4,
         textShadowColor: '#20B2AA',
         textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2
+        textShadowRadius: 2,
+        fontFamily: 'Jersey10',
     },
     skillStats: {
         flexDirection: 'row',
@@ -525,19 +567,22 @@ const styles = StyleSheet.create({
         color: '#20B2AA',
         fontSize: 10,
         fontWeight: 'bold',
-        marginRight: 2
+        marginRight: 2,
+        fontFamily: 'Jersey10',
     },
     statValue: {
         color: '#FFFFFF',
         fontSize: 10,
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        fontFamily: 'Jersey10',
     },
     skillDescription: {
         color: '#FFFFFF',
         fontSize: 9,
         textAlign: 'center',
         opacity: 0.8,
-        marginTop: 4
+        marginTop: 4,
+        fontFamily: 'Jersey10',
     },
     removeButton: {
         width: 24,
@@ -554,7 +599,25 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         textAlign: 'center',
-        lineHeight: 20
+        lineHeight: 20,
+        fontFamily: 'Jersey10',
+    },
+    continueButton: {
+        backgroundColor: '#4CAF50',
+        padding: 15,
+        borderRadius: 10,
+        alignItems: 'center',
+        marginTop: 20,
+        marginBottom: 20,
+    },
+    disabledButton: {
+        backgroundColor: '#cccccc',
+    },
+    continueButtonText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
+        fontFamily: 'Jersey10',
     },
 });
 

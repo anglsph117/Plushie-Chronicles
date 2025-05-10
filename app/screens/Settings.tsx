@@ -29,6 +29,7 @@ const TitleText = styled(Text, {
   textShadowOffset: { width: 1, height: 1 },
   textShadowRadius: 4,
   marginBottom: 20,
+  fontFamily: '$body',
 });
 
 const ContentText = styled(Text, {
@@ -37,6 +38,7 @@ const ContentText = styled(Text, {
   lineHeight: 24,
   textAlign: "left",
   marginBottom: 12,
+  fontFamily: '$body',
 });
 
 const CategoryText = styled(Text, {
@@ -49,6 +51,7 @@ const CategoryText = styled(Text, {
   marginBottom: 6,
   textTransform: "uppercase",
   letterSpacing: 1,
+  fontFamily: '$body',
 });
 
 const StyledButton = styled(Button, {
@@ -85,6 +88,7 @@ const StyledText = styled(Text, {
   textShadowRadius: 6,
   numberOfLines: 1,
   adjustsFontSizeToFit: true,
+  fontFamily: '$body',
 });
 
 const Settings = () => {
@@ -138,7 +142,7 @@ const Settings = () => {
         >
           <XStack space={8} alignItems="center" paddingHorizontal={12}>
             <Ionicons name="arrow-back" size={20} color="#20B2AA" />
-            <Text style={styles.backButtonText}>
+            <Text style={{ ...styles.backButtonText, fontFamily: 'PixelifySans' }}>
               Back
             </Text>
           </XStack>
@@ -148,9 +152,7 @@ const Settings = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-
-
-          <CategoryText>Audio</CategoryText>
+          <CategoryText fontFamily="$body">Audio</CategoryText>
           <YStack space={4} alignItems="center">
             <StyledButton
               pressStyle={{
@@ -161,11 +163,11 @@ const Settings = () => {
               onPress={() => router.push('/(settings)/SoundEffects')}
               animation="quick"
             >
-              <StyledText>SOUND & EFFECTS</StyledText>
+              <StyledText fontFamily="$body">SOUND EFFECTS</StyledText>
             </StyledButton>
           </YStack>
 
-          <CategoryText>System</CategoryText>
+          <CategoryText fontFamily="$body">System</CategoryText>
           <YStack space={4} alignItems="center" marginBottom={24}>
             <StyledButton
               pressStyle={{
@@ -176,7 +178,7 @@ const Settings = () => {
               onPress={() => router.push('/(settings)/About')}
               animation="quick"
             >
-              <StyledText>ABOUT</StyledText>
+              <StyledText fontFamily="$body">ABOUT</StyledText>
             </StyledButton>
           </YStack>
         </ScrollView>

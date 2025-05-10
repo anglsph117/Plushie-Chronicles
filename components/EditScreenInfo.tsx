@@ -8,11 +8,11 @@ export const EditScreenInfo = ({ path }: { path: string }) => {
   return (
     <YStack>
       <YStack alignItems="center" marginHorizontal="$6">
-        <H4>{title}</H4>
+        <H4 fontFamily="$body">{title}</H4>
         <YStack borderRadius="$3" marginVertical="$1">
-          <Paragraph>{path}</Paragraph>
+          <Paragraph fontFamily="$body">{path}</Paragraph>
         </YStack>
-        <Paragraph>{description}</Paragraph>
+        <Paragraph fontFamily="$body">{description}</Paragraph>
       </YStack>
     </YStack>
   );
