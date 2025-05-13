@@ -28,12 +28,13 @@ interface Enemy {
 
 const BattleSystem = () => {
   const router = useRouter();
-  const { playerName, selectedSkills, playerImageUrl, difficulty, enemyHealth } = useLocalSearchParams<{ 
+  const { playerName, selectedSkills, playerImageUrl, difficulty, enemyHealth, selectedMap } = useLocalSearchParams<{ 
     playerName: string;
     selectedSkills: string;
     playerImageUrl: string;
     difficulty: string;
     enemyHealth: string;
+    selectedMap: string;
   }>();
   const [playerHealth, setPlayerHealth] = useState(100);
   const [playerMana, setPlayerMana] = useState(100);
@@ -84,6 +85,45 @@ const BattleSystem = () => {
   const enemyHealthBarAnim = useRef(new Animated.Value(100)).current;
   const [showDodgeMessage, setShowDodgeMessage] = useState(false);
   const dodgeMessageAnim = useRef(new Animated.Value(0)).current;
+  const [playerCharacterImage, setPlayerCharacterImage] = useState(playerImageUrl);
+  const [isEnemyShaking, setIsEnemyShaking] = useState(false);
+  const enemyShakeAnim = useRef(new Animated.Value(0)).current;
+  const [showEnemyRainbowBlood, setShowEnemyRainbowBlood] = useState(false);
+  const enemyRainbowBloodAnim = useRef(new Animated.Value(0)).current;
+  const [showEnemyDamageNumber, setShowEnemyDamageNumber] = useState(false);
+  const [enemyDamageAmount, setEnemyDamageAmount] = useState(0);
+  const enemyDamageNumberAnim = useRef(new Animated.Value(0)).current;
+  const [isPlayerAttacking, setIsPlayerAttacking] = useState(false);
+  const playerAttackAnim = useRef(new Animated.Value(0)).current;
+  const [showReplenishAura, setShowReplenishAura] = useState(false);
+  const replenishAuraAnim = useRef(new Animated.Value(0)).current;
+  const particleAnim = useRef(new Animated.Value(0)).current;
+  // Dragon Ball Aura: layered flames, core glow, sparks, and player scale
+  const [flameConfigsInner] = useState(
+    Array.from({ length: 8 }, (_, i) => ({
+      left: 40 + Math.random() * 60, // moved 40px left
+      width: 10 + Math.random() * 8,
+      height: 30 + Math.random() * 18,
+      delay: Math.random() * 120,
+      rotate: `${-10 + Math.random() * 20}deg`,
+      key: `inner-${i}`,
+    }))
+  );
+  const [flameConfigsOuter] = useState(
+    Array.from({ length: 12 }, (_, i) => ({
+      left: 20 + Math.random() * 80, // moved 40px left
+      width: 18 + Math.random() * 10,
+      height: 50 + Math.random() * 30,
+      delay: Math.random() * 200,
+      rotate: `${-20 + Math.random() * 40}deg`,
+      key: `outer-${i}`,
+    }))
+  );
+  const flameAnimsInner = useRef(flameConfigsInner.map(() => new Animated.Value(0))).current;
+  const flameAnimsOuter = useRef(flameConfigsOuter.map(() => new Animated.Value(0))).current;
+  const [sparkConfigs, setSparkConfigs] = useState<{ left: number; bottom: number; angle: number; length: number; key: string; }[]>([]);
+  const sparkAnims = useRef<Animated.Value[]>([]);
+  const playerScaleAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (selectedSkills) {
@@ -143,7 +183,7 @@ const BattleSystem = () => {
 
   useEffect(() => {
     const maps: string[] = [
-      'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/maps/map.png',
+      'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/maps/mapp.jpg',
     ];
     const randomMap = maps[Math.floor(Math.random() * maps.length)];
     setBackgroundMap({ uri: randomMap });
@@ -225,8 +265,151 @@ const BattleSystem = () => {
     // Handle active skills
     if (playerMana < skill.manaCost || skillCooldowns[skill.name] > 0) return;
 
+    // Handle Heavy Slash animation for different heroes
+    if (skill.name === "Heavy Slash") {
+      setIsPlayerAttacking(true);
+      playerAttackAnim.setValue(0);
+      console.log('Current player image:', playerImageUrl);
+      console.log('Current player image length:', playerImageUrl.length);
+      console.log('Expected Hero 1 URL:', 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/idle%20na%20malupittt.gif');
+      console.log('Expected URL length:', 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/idle%20na%20malupittt.gif'.length);
+      console.log('URLs match?', playerImageUrl === 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/idle%20na%20malupittt.gif');
+
+      if (playerImageUrl === 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/idle%20na%20malupittt.gif') {
+        console.log('Setting Heavy Slash animation for Hero 1');
+        // Male Hero 1 Heavy Slash animation
+        setPlayerCharacterImage('https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/animations/White%20Heavy%20slash.gif');
+        console.log('Heavy Slash animation URL set');
+        
+        // Animate player moving forward immediately
+        Animated.timing(playerAttackAnim, {
+          toValue: 1,
+          duration: 1200, // 1.5x slower animation
+          useNativeDriver: true,
+        }).start(() => {
+          // Wait for animation to complete before applying damage
+          setTimeout(() => {
+            // Apply damage and effects
+            const totalDamage = skill.damage + rawDamageBonus;
+            const newEnemyHealth = Math.max(0, enemy.health - totalDamage);
+            setEnemy(prev => ({ ...prev, health: newEnemyHealth }));
+            animateHealthChange(enemy.health, newEnemyHealth, enemyHealthBarAnim);
+            setCombatLog(prev => [...prev, `You used ${skill.name} and dealt ${totalDamage} damage!`]);
+
+            // Show enemy effects after 0.5 seconds
+            setTimeout(() => {
+              shakeEnemy();
+              showEnemyRainbowBloodEffect();
+              showEnemyDamageIndicator(totalDamage);
+            }, 500);
+
+            // Reset player animation after a short delay
+            setTimeout(() => {
+              setPlayerCharacterImage(playerImageUrl);
+              setIsPlayerAttacking(false);
+            }, 300);
+
+            if (newEnemyHealth <= 0) {
+              setCombatLog(prev => [...prev, 'Enemy defeated!']);
+              setIsPlayerTurn(true);
+              setTimer(30);
+              setIsResting(false);
+              setIsDodging(false);
+              if (Platform.OS === 'ios') {
+                requestAnimationFrame(() => {
+                  setShowVictory(true);
+                });
+              } else {
+                setShowVictory(true);
+              }
+              return;
+            }
+
+            // Add delay before enemy attack
+            setTimeout(() => {
+              setIsPlayerTurn(false);
+              handleEnemyAttack(() => {
+                setIsPlayerTurn(true);
+                setTimer(30);
+                setIsResting(false);
+              });
+            }, 500);
+          }, 1200); // Match the animation duration
+        });
+        return;
+      } else if (playerImageUrl === 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/purp%20idle.gif') {
+        // Female Hero 1 Heavy Slash animation
+        setPlayerCharacterImage('https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/animations/Blue%20Heavy%20slash.gif');
+      } else if (playerImageUrl === 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/nonbinary%20idle.gif') {
+        // Non-Binary Hero Heavy Slash animation
+        setPlayerCharacterImage('https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/animations/Blue%20Heavy%20slash.gif');
+      } else if (playerImageUrl === 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/FLy%20idle.gif') {
+        // Male Hero 2 Heavy Slash animation
+        setPlayerCharacterImage('https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/male2_heavy_slash.gif');
+      } else if (playerImageUrl === 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/asd-removebg-preview.png') {
+        // Female Hero 2 Heavy Slash animation
+        setPlayerCharacterImage('https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/animations/Blue%20Heavy%20slash.gif');
+      }
+
+      // Animate player moving forward immediately
+      Animated.timing(playerAttackAnim, {
+        toValue: 1,
+        duration: 800, // Faster animation
+        useNativeDriver: true,
+      }).start(() => {
+        // Wait for animation to complete before applying damage
+        setTimeout(() => {
+          // Apply damage and effects
+          const totalDamage = skill.damage + rawDamageBonus;
+          const newEnemyHealth = Math.max(0, enemy.health - totalDamage);
+          setEnemy(prev => ({ ...prev, health: newEnemyHealth }));
+          animateHealthChange(enemy.health, newEnemyHealth, enemyHealthBarAnim);
+          setCombatLog(prev => [...prev, `You used ${skill.name} and dealt ${totalDamage} damage!`]);
+
+          // Show enemy effects
+          shakeEnemy();
+          showEnemyRainbowBloodEffect();
+          showEnemyDamageIndicator(totalDamage);
+
+          // Reset player animation after a short delay
+          setTimeout(() => {
+            setPlayerCharacterImage(playerImageUrl);
+            setIsPlayerAttacking(false);
+          }, 300); // Shorter delay before reset
+
+          if (newEnemyHealth <= 0) {
+            setCombatLog(prev => [...prev, 'Enemy defeated!']);
+            setIsPlayerTurn(true);
+            setTimer(30);
+            setIsResting(false);
+            setIsDodging(false);
+            if (Platform.OS === 'ios') {
+              requestAnimationFrame(() => {
+                setShowVictory(true);
+              });
+            } else {
+              setShowVictory(true);
+            }
+            return;
+          }
+
+          // Add delay before enemy attack
+          setTimeout(() => {
+            setIsPlayerTurn(false);
+            handleEnemyAttack(() => {
+              setIsPlayerTurn(true);
+              setTimer(30);
+              setIsResting(false);
+            });
+          }, 500); // Shorter delay before enemy attack
+        }, 800); // Match the animation duration
+      });
+      return;
+    }
+
     if (skill.name === "Replenish") {
       showSkillPopup("REPLENISHED!");
+      showDragonBallAura();
       animateHealthChange(playerHealth, maxHealth, playerHealthBarAnim);
       setPlayerHealth(maxHealth);
       setCombatLog(prev => [...prev, `Your health has been fully restored!`]);
@@ -240,6 +423,7 @@ const BattleSystem = () => {
       handleEnemyAttack(() => {
         setIsPlayerTurn(true);
         setTimer(30);
+        setIsResting(false);
       });
       return;
     }
@@ -287,16 +471,6 @@ const BattleSystem = () => {
         return;
       }
       
-      if (!hasDealtDamage) {
-        setHasDealtDamage(true);
-        const damage = isResting ? enemy.damage * 2 : enemy.damage;
-        setPlayerHealth(prev => {
-          const newHealth = Math.max(0, prev - damage);
-          animateHealthChange(prev, newHealth, playerHealthBarAnim);
-          return newHealth;
-        });
-        setCombatLog(prev => [...prev, `Enemy attacked and dealt ${damage} damage!`]);
-      }
       setIsPlayerTurn(true);
       setTimer(30);
       setIsResting(false);
@@ -306,7 +480,6 @@ const BattleSystem = () => {
   // Update handleRest to remove turn notifications
   const handleRest = () => {
     if (!isPlayerTurn || hasDealtDamage) return;
-    setHasDealtDamage(true); 
     setIsResting(true);
     const newMana = Math.min(100, playerMana + 50);
     setPlayerMana(newMana);
@@ -314,16 +487,6 @@ const BattleSystem = () => {
     setCombatLog(prev => [...prev, 'You take a rest and recover 50 mana!']);
     setIsPlayerTurn(false);
     handleEnemyAttack(() => {
-      if (!hasDealtDamage) {
-        setHasDealtDamage(true);
-        const damage = enemy.damage * 2;
-        setPlayerHealth(prev => {
-          const newHealth = Math.max(0, prev - damage);
-          animateHealthChange(prev, newHealth, playerHealthBarAnim);
-          return newHealth;
-        });
-        setCombatLog(prev => [...prev, `Enemy attacked and dealt ${damage} damage!`]);
-      }
       setIsPlayerTurn(true);
       setTimer(30);
       setIsResting(false);
@@ -348,7 +511,6 @@ const BattleSystem = () => {
   // Update handleHeal to remove turn notifications
   const handleHeal = () => {
     if (!isPlayerTurn || hasDealtDamage) return;
-    setHasDealtDamage(true);
     const healAmount = 20;
     const newHealth = Math.min(100, playerHealth + healAmount);
     setPlayerHealth(newHealth);
@@ -356,16 +518,6 @@ const BattleSystem = () => {
     setCombatLog(prev => [...prev, `You heal yourself for ${healAmount} HP!`]);
     setIsPlayerTurn(false);
     handleEnemyAttack(() => {
-      if (!hasDealtDamage) {
-        setHasDealtDamage(true);
-        const damage = enemy.damage;
-        setPlayerHealth(prev => {
-          const newHealth = Math.max(0, prev - damage);
-          animateHealthChange(prev, newHealth, playerHealthBarAnim);
-          return newHealth;
-        });
-        setCombatLog(prev => [...prev, `Enemy attacked and dealt ${damage} damage!`]);
-      }
       setIsPlayerTurn(true);
       setTimer(30);
     });
@@ -386,7 +538,7 @@ const BattleSystem = () => {
       name: 'Samurai',
       health: parseInt(enemyHealth) || 100,
       maxHealth: parseInt(enemyHealth) || 100,
-      damage: 35,
+      damage: 25,
       imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/samurai%20idle.gif'
     });
     playerHealthBarAnim.setValue(100);
@@ -406,7 +558,7 @@ const BattleSystem = () => {
         name: 'Samurai',
         health: parseInt(enemyHealth) || 100,
         maxHealth: parseInt(enemyHealth) || 100,
-        damage: 35,
+        damage: 25,
         imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/samurai%20idle.gif'
       });
       playerHealthBarAnim.setValue(100);
@@ -495,21 +647,19 @@ const BattleSystem = () => {
         return;
       }
       
-      if (!hasDealtDamage) {
-        setHasDealtDamage(true);
-        const damage = isResting ? enemy.damage * 2 : enemy.damage;
-        setPlayerHealth(prev => {
-          const newHealth = Math.max(0, prev - damage);
-          animateHealthChange(prev, newHealth, playerHealthBarAnim);
-          return newHealth;
-        });
-        setCombatLog(prev => [...prev, `Enemy attacked and dealt ${damage} damage!`]);
-        
-        // Show damage number and trigger effects
-        showDamageIndicator(damage);
-        shakePlayer();
-        showRainbowBloodEffect();
-      }
+      // Apply enemy damage
+      const damage = enemy.damage;
+      setPlayerHealth(prev => {
+        const newHealth = Math.max(0, prev - damage);
+        animateHealthChange(prev, newHealth, playerHealthBarAnim);
+        return newHealth;
+      });
+      setCombatLog(prev => [...prev, `Enemy attacked and dealt ${damage} damage!`]);
+      
+      // Show damage number and trigger effects
+      showDamageIndicator(damage);
+      shakePlayer();
+      showRainbowBloodEffect();
       
       setIsPlayerTurn(true);
       setTimer(30);
@@ -617,6 +767,147 @@ const BattleSystem = () => {
     });
   };
 
+  // Add enemy shake animation
+  const shakeEnemy = () => {
+    setIsEnemyShaking(true);
+    Animated.sequence([
+      Animated.timing(enemyShakeAnim, {
+        toValue: 10,
+        duration: 25,
+        useNativeDriver: true,
+      }),
+      Animated.timing(enemyShakeAnim, {
+        toValue: -10,
+        duration: 25,
+        useNativeDriver: true,
+      }),
+      Animated.timing(enemyShakeAnim, {
+        toValue: 10,
+        duration: 25,
+        useNativeDriver: true,
+      }),
+      Animated.timing(enemyShakeAnim, {
+        toValue: 0,
+        duration: 25,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsEnemyShaking(false);
+    });
+  };
+
+  // Add enemy blood effect
+  const showEnemyRainbowBloodEffect = () => {
+    setShowEnemyRainbowBlood(true);
+    enemyRainbowBloodAnim.setValue(0);
+    Animated.timing(enemyRainbowBloodAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowEnemyRainbowBlood(false);
+    });
+  };
+
+  // Add enemy damage number
+  const showEnemyDamageIndicator = (damage: number) => {
+    setEnemyDamageAmount(damage);
+    setShowEnemyDamageNumber(true);
+    enemyDamageNumberAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(enemyDamageNumberAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(enemyDamageNumberAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setShowEnemyDamageNumber(false);
+    });
+  };
+
+  // Add this function to handle the replenish aura animation
+  const showDragonBallAura = () => {
+    setShowReplenishAura(true);
+    // Animate flames
+    flameAnimsInner.forEach((anim, i) => {
+      anim.setValue(0);
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 200 + Math.random() * 120,
+            delay: flameConfigsInner[i].delay,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 120 + Math.random() * 80,
+            useNativeDriver: true,
+          })
+        ])
+      ).start();
+    });
+    flameAnimsOuter.forEach((anim, i) => {
+      anim.setValue(0);
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 400 + Math.random() * 300,
+            delay: flameConfigsOuter[i].delay,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 200 + Math.random() * 200,
+            useNativeDriver: true,
+          })
+        ])
+      ).start();
+    });
+    // Animate player scale (power-up effect)
+    playerScaleAnim.setValue(1);
+    Animated.sequence([
+      Animated.timing(playerScaleAnim, { toValue: 1.08, duration: 120, useNativeDriver: true }),
+      Animated.timing(playerScaleAnim, { toValue: 0.97, duration: 120, useNativeDriver: true }),
+      Animated.timing(playerScaleAnim, { toValue: 1.03, duration: 120, useNativeDriver: true }),
+      Animated.timing(playerScaleAnim, { toValue: 1, duration: 120, useNativeDriver: true })
+    ]).start();
+    // Animate sparks
+    const sparks = Array.from({ length: 8 }, (_, i) => ({
+      left: 120 + Math.random() * 40 - 20,
+      bottom: 80 + Math.random() * 40 - 20,
+      angle: -30 + Math.random() * 60,
+      length: 18 + Math.random() * 10,
+      key: `spark-${i}`,
+    }));
+    setSparkConfigs(sparks);
+    sparkAnims.current = sparks.map(() => new Animated.Value(0));
+    sparkAnims.current.forEach((anim, i) => {
+      anim.setValue(0);
+      Animated.sequence([
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 350 + Math.random() * 200,
+          delay: Math.random() * 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim, {
+          toValue: 0,
+          duration: 100,
+          useNativeDriver: true,
+        })
+      ]).start();
+    });
+    // Hide aura after 1.2s
+    setTimeout(() => setShowReplenishAura(false), 1200);
+  };
+
   if (!backgroundMap) {
     return (
       <View style={styles.container}>
@@ -632,7 +923,7 @@ const BattleSystem = () => {
         translucent={true}
       />
       <ImageBackground
-        source={backgroundMap}
+        source={{ uri: selectedMap }}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
@@ -692,20 +983,148 @@ const BattleSystem = () => {
             <View style={styles.playerSide}>
               <Animated.View
                 style={{
-                  transform: [{
-                    translateX: playerShakeAnim
-                  }]
+                  transform: [
+                    {
+                      translateX: playerShakeAnim
+                    },
+                    {
+                      translateX: playerAttackAnim.interpolate({
+                        inputRange: [0, 0.5, 1],
+                        outputRange: [0, 300, 0]
+                      })
+                    }
+                  ]
                 }}
               >
-                <Image 
-                  source={{ uri: playerImageUrl }}
+                {showReplenishAura && (
+                  <>
+                    {/* Core white/yellow glow */}
+                    <Animated.View
+                      style={{
+                        position: 'absolute',
+                        width: 120,
+                        height: 120,
+                        borderRadius: 60,
+                        backgroundColor: 'rgba(255,255,200,0.45)',
+                        shadowColor: '#fffbe6',
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: 0.8,
+                        shadowRadius: 30,
+                        elevation: 8,
+                        zIndex: 1,
+                        top: 0,
+                        left: 0,
+                        opacity: 0.8,
+                      }}
+                    />
+                    {/* Inner flames (white/yellow) */}
+                    {flameConfigsInner.map((flame, i) => (
+                      <Animated.View
+                        key={flame.key}
+                        style={{
+                          position: 'absolute',
+                          left: flame.left,
+                          bottom: 30,
+                          width: flame.width,
+                          height: flame.height,
+                          borderTopLeftRadius: 8,
+                          borderTopRightRadius: 8,
+                          borderBottomLeftRadius: 4,
+                          borderBottomRightRadius: 4,
+                          backgroundColor: 'rgba(255,255,200,0.85)',
+                          opacity: flameAnimsInner[i].interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }),
+                          transform: [
+                            { scaleY: flameAnimsInner[i].interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] }) },
+                            { translateY: flameAnimsInner[i].interpolate({ inputRange: [0, 1], outputRange: [0, -18] }) },
+                            { rotate: flame.rotate },
+                          ],
+                          shadowColor: '#fffbe6',
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: 0.7,
+                          shadowRadius: 8,
+                          elevation: 4,
+                          zIndex: 2,
+                        }}
+                      />
+                    ))}
+                    {/* Outer flames (green) */}
+                    {flameConfigsOuter.map((flame, i) => (
+                      <Animated.View
+                        key={flame.key}
+                        style={{
+                          position: 'absolute',
+                          left: flame.left,
+                          bottom: 30,
+                          width: flame.width,
+                          height: flame.height,
+                          borderTopLeftRadius: 12,
+                          borderTopRightRadius: 12,
+                          borderBottomLeftRadius: 6,
+                          borderBottomRightRadius: 6,
+                          backgroundColor: 'rgba(34, 255, 94, 0.85)',
+                          opacity: flameAnimsOuter[i].interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }),
+                          transform: [
+                            { scaleY: flameAnimsOuter[i].interpolate({ inputRange: [0, 1], outputRange: [1, 1.4] }) },
+                            { translateY: flameAnimsOuter[i].interpolate({ inputRange: [0, 1], outputRange: [0, -30] }) },
+                            { rotate: flame.rotate },
+                          ],
+                          shadowColor: '#baffc9',
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: 0.7,
+                          shadowRadius: 10,
+                          elevation: 5,
+                          zIndex: 2,
+                        }}
+                      />
+                    ))}
+                    {/* Sparks */}
+                    {sparkConfigs.map((spark, i) => (
+                      <Animated.View
+                        key={spark.key}
+                        style={{
+                          position: 'absolute',
+                          left: spark.left,
+                          bottom: spark.bottom,
+                          width: 2,
+                          height: spark.length,
+                          backgroundColor: '#fffbe6',
+                          opacity: sparkAnims.current[i]?.interpolate({ inputRange: [0, 1], outputRange: [0.2, 0.9] }) || 0,
+                          transform: [
+                            { translateX: sparkAnims.current[i]?.interpolate({ inputRange: [0, 1], outputRange: [0, Math.cos(spark.angle * Math.PI / 180) * 30] }) || 0 },
+                            { translateY: sparkAnims.current[i]?.interpolate({ inputRange: [0, 1], outputRange: [0, -Math.sin(spark.angle * Math.PI / 180) * 30] }) || 0 },
+                            { scaleY: sparkAnims.current[i]?.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] }) || 1 },
+                            { rotate: `${spark.angle}deg` },
+                          ],
+                          borderRadius: 1,
+                          zIndex: 3,
+                        }}
+                      />
+                    ))}
+                  </>
+                )}
+                {/* Player image with scale animation */}
+                <Animated.Image 
+                  source={{ uri: playerCharacterImage }}
                   style={[
                     styles.playerCharacterImage,
-                    playerImageUrl === 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/idle%20na%20malupittt.gif'
+                    playerCharacterImage === 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/Characters/na_malupit_idle.gif'
                       ? { width: 240, height: 240 }
-                      : {}
+                      : {},
+                    {
+                      transform: [
+                        {
+                          translateX: playerAttackAnim.interpolate({
+                            inputRange: [0, 0.5, 1],
+                            outputRange: [0, 300, 0]
+                          })
+                        },
+                        { scale: showReplenishAura ? playerScaleAnim : 1 },
+                      ]
+                    }
                   ]}
                   resizeMode="contain"
+                  onLoad={() => console.log('Image loaded successfully:', playerCharacterImage)}
+                  onError={(error) => console.log('Image load error:', error.nativeEvent.error, 'for URL:', playerCharacterImage)}
                 />
                 {showDamageNumber && (
                   <Animated.Text
@@ -848,25 +1267,143 @@ const BattleSystem = () => {
 
             {/* Enemy Side */}
             <View style={styles.enemySide}>
-              <Animated.Image
-                source={{ uri: isEnemyAttacking
-                  ? 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/animations/samurai%20attack.gif'
-                  : enemy.imageUrl }}
-                style={[
-                  styles.characterImage,
-                  isEnemyAttacking && {
-                    width: 240,
-                    height: 240,
-                    transform: [{
-                      translateX: enemyAttackAnim.interpolate({
-                        inputRange: [0, 0.1, 0.9, 1],
-                        outputRange: [0, -300, -300, 0]
-                      })
-                    }]
-                  }
-                ]}
-                resizeMode="contain"
-              />
+              <Animated.View
+                style={{
+                  transform: [{
+                    translateX: enemyShakeAnim
+                  }]
+                }}
+              >
+                <Animated.Image
+                  source={{ uri: isEnemyAttacking
+                    ? 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/animations/samurai%20attack%202.0.gif'
+                    : enemy.imageUrl }}
+                  style={[
+                    styles.characterImage,
+                    isEnemyAttacking && {
+                      width: 240,
+                      height: 240,
+                      transform: [{
+                        translateX: enemyAttackAnim.interpolate({
+                          inputRange: [0, 0.1, 0.9, 1],
+                          outputRange: [0, -300, -300, 0]
+                        })
+                      }]
+                    }
+                  ]}
+                  resizeMode="contain"
+                />
+                {showEnemyDamageNumber && (
+                  <Animated.Text
+                    style={[
+                      styles.damageNumber,
+                      {
+                        opacity: enemyDamageNumberAnim,
+                        transform: [
+                          {
+                            translateY: enemyDamageNumberAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0, -50]
+                            })
+                          },
+                          {
+                            scale: enemyDamageNumberAnim.interpolate({
+                              inputRange: [0, 0.5, 1],
+                              outputRange: [0.5, 1.2, 1]
+                            })
+                          }
+                        ]
+                      }
+                    ]}
+                  >
+                    -{enemyDamageAmount}
+                  </Animated.Text>
+                )}
+                {showEnemyRainbowBlood && (
+                  <>
+                    {/* Enemy blood drips */}
+                    {[...Array(15)].map((_, index) => (
+                      <Animated.View
+                        key={index}
+                        style={[
+                          styles.bloodContainer,
+                          {
+                            opacity: enemyRainbowBloodAnim.interpolate({
+                              inputRange: [0, 0.8, 1],
+                              outputRange: [1, 0.8, 0]
+                            }),
+                            transform: [
+                              {
+                                translateY: enemyRainbowBloodAnim.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [0, 300]
+                                })
+                              },
+                              {
+                                scale: enemyRainbowBloodAnim.interpolate({
+                                  inputRange: [0, 0.3, 1],
+                                  outputRange: [1, 1.2, 0.8]
+                                })
+                              }
+                            ],
+                            left: `${-5 + (index * 7)}%`,
+                            top: `${20 + (index % 3) * 5}%`,
+                            width: 8 + Math.random() * 4,
+                            height: 12 + Math.random() * 8,
+                          }
+                        ]}
+                      >
+                        <View 
+                          style={[
+                            styles.bloodDrop,
+                            {
+                              backgroundColor: `rgba(139, 0, 0, ${0.8 + Math.random() * 0.2})`,
+                              borderRadius: 4,
+                            }
+                          ]} 
+                        />
+                      </Animated.View>
+                    ))}
+                    {/* Enemy blood splatter */}
+                    {[...Array(8)].map((_, index) => (
+                      <Animated.View
+                        key={`splatter-${index}`}
+                        style={[
+                          styles.bloodSplatterContainer,
+                          {
+                            opacity: enemyRainbowBloodAnim.interpolate({
+                              inputRange: [0.3, 0.8, 1],
+                              outputRange: [0, 1, 0]
+                            }),
+                            transform: [
+                              {
+                                scale: enemyRainbowBloodAnim.interpolate({
+                                  inputRange: [0.3, 0.5, 1],
+                                  outputRange: [0, 1, 1.2]
+                                })
+                              }
+                            ],
+                            left: `${-15 + (index * 8)}%`,
+                            bottom: '0%',
+                            width: 20 + Math.random() * 15,
+                            height: 10 + Math.random() * 8,
+                          }
+                        ]}
+                      >
+                        <View 
+                          style={[
+                            styles.bloodSplatter,
+                            {
+                              backgroundColor: `rgba(139, 0, 0, ${0.6 + Math.random() * 0.4})`,
+                              borderRadius: 8,
+                            }
+                          ]} 
+                        />
+                      </Animated.View>
+                    ))}
+                  </>
+                )}
+              </Animated.View>
               {showSoru && (
                 <Animated.Text
                   style={[
@@ -2033,6 +2570,23 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
     fontFamily: 'PixelifySans',
     zIndex: 1000,
+  },
+  replenishAura: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+    borderWidth: 2,
+    borderColor: 'rgba(34, 197, 94, 0.4)',
+    shadowColor: '#22c55e',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 5,
+    zIndex: 1,
+    top: -40,
+    left: -40,
   },
 });
 

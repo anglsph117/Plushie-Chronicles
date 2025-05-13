@@ -243,7 +243,7 @@ const SkillsSelection = () => {
     const handleConfirm = () => {
         if (selectedSkills.length === 3) {
             router.push({
-                pathname: '/(home)/BattleSystem',
+                pathname: '/(home)/MapSelection',
                 params: { 
                     playerName,
                     playerImageUrl,
