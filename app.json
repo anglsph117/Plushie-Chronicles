@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Plushie Chronicles",
-    "slug": "plushie-chronicles",
+    "slug": "plushie-chronicle",
     "version": "1.0.0",
     "scheme": "plushie",
     "orientation": "landscape",
@@ -23,7 +23,7 @@
       "typedRoutes": true,
       "tsconfigPaths": true
     },
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon.jpg",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
@@ -40,7 +40,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon.jpg",
         "backgroundColor": "#ffffff"
       },
       "package": "com.yourcompany.plushiechronicles",
@@ -52,7 +52,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "your-project-id"
+        "projectId": "a2094547-a2fa-46aa-92d9-af1d5c8279c4"
       }
     }
   }
