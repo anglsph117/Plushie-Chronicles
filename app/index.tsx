@@ -8,6 +8,7 @@ const bgvid = require('../assets/bgvid.mp4');
 import { router } from "expo-router";
 import LoadingScreen from "../components/LoadingScreen";
 import { FontAwesome } from '@expo/vector-icons';
+import { useMusic } from '../context/MusicContext';
 
 const { width } = Dimensions.get('window');
 const buttonWidth = Math.min(width * 0.8, 280);
@@ -44,6 +45,7 @@ export default function Home() {
   const [videoReady, setVideoReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  const { playBgm } = useMusic();
 
   // Choose ONE video source - this uses the remote demo video which is reliable for testing
   /*  const videoSource = {
@@ -141,7 +143,10 @@ export default function Home() {
         <YStack space={20} alignItems="center" justifyContent="center">
           {[{
             label: 'START GAME',
-            onPress: () => router.push('/(home)/GameDificulties'),
+            onPress: () => {
+              playBgm();
+              router.push('/(home)/GameDificulties');
+            },
             gradient: ['#fbb040', '#e97c3c', '#a13b1d'] as [string, string, string],
             border: '#a13b1d',
           }, {

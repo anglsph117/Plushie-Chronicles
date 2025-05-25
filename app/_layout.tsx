@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { TamaguiProvider } from 'tamagui';
 
 import config from '../tamagui.config';
+import { MusicProvider, useMusic } from '../context/MusicContext';
 
 export default function Layout() {
   const [loaded] = useFonts({
@@ -21,10 +22,12 @@ export default function Layout() {
   if (!loaded) return null;
 
   return (
-    <TamaguiProvider config={config}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-      </Stack>
-    </TamaguiProvider>
+    <MusicProvider>
+      <TamaguiProvider config={config}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+        </Stack>
+      </TamaguiProvider>
+    </MusicProvider>
   );
 }

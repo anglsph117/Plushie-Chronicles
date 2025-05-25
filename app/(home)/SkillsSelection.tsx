@@ -27,15 +27,6 @@ const skillsData: Skill[] = [
         damage: 30
     },
     {
-        id: 2,
-        name: 'Cryo Crystals',
-        description: 'Create ice crystals that freeze enemies',
-        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/cryo_crystals-removebg-preview.png',
-        selected: false,
-        cooldown: 6,
-        damage: 30
-    },
-    {
         id: 3,
         name: 'Elemental Sword Master',
         description: 'Master the art of elemental sword combat',
@@ -45,15 +36,6 @@ const skillsData: Skill[] = [
         damage: 30
     },
     {
-        id: 4,
-        name: 'Enlightenment',
-        description: 'Gain deep understanding of combat techniques',
-        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/enlightenment-removebg-preview.png',
-        selected: false,
-        cooldown: 10,
-        damage: 0
-    },
-    {
         id: 5,
         name: 'Fireball',
         description: 'Launch a powerful fireball at enemies',
@@ -61,15 +43,6 @@ const skillsData: Skill[] = [
         selected: false,
         cooldown: 5,
         damage: 35
-    },
-    {
-        id: 6,
-        name: 'Flurries',
-        description: 'Execute rapid sword strikes',
-        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/flurries-removebg-preview.png',
-        selected: false,
-        cooldown: 3,
-        damage: 20
     },
     {
         id: 7,
@@ -90,24 +63,6 @@ const skillsData: Skill[] = [
         damage: 0
     },
     {
-        id: 9,
-        name: 'Quick Slash',
-        description: 'Execute a fast sword slash',
-        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/quick_slash-removebg-preview.png',
-        selected: false,
-        cooldown: 2,
-        damage: 20
-    },
-    {
-        id: 10,
-        name: 'Quick Step',
-        description: 'Move quickly to dodge attacks',
-        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/quick_step-removebg-preview.png',
-        selected: false,
-        cooldown: 4,
-        damage: 0
-    },
-    {
         id: 11,
         name: 'Replenish',
         description: 'Restore health and energy',
@@ -124,33 +79,6 @@ const skillsData: Skill[] = [
         selected: false,
         cooldown: 0,
         damage: 0
-    },
-    {
-        id: 13,
-        name: 'Sword Blessing',
-        description: 'Enhance sword damage',
-        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/sword_blessing-removebg-preview.png',
-        selected: false,
-        cooldown: 15,
-        damage: 0
-    },
-    {
-        id: 14,
-        name: 'Thrust',
-        description: 'Perform a powerful thrust attack',
-        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/thrust-removebg-preview.png',
-        selected: false,
-        cooldown: 5,
-        damage: 30
-    },
-    {
-        id: 15,
-        name: 'Water Shot',
-        description: 'Launch a water projectile',
-        imageUrl: 'https://owqaiuqmvihvwomtiimr.supabase.co/storage/v1/object/public/plushiechronicles/skills/water_shot-removebg-preview.png',
-        selected: false,
-        cooldown: 4,
-        damage: 30
     }
 ];
 
